@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Botify X — Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:#07070f;font-family:'Segoe UI',system-ui,sans-serif;color:#e5e7eb;display:flex}
+
+/* ── Sidebar ── */
+.sb{position:fixed;top:0;left:0;bottom:0;width:230px;background:#0d0d1a;border-right:1px solid #1a1a2e;display:flex;flex-direction:column;z-index:50}
+.sb-logo{display:flex;align-items:center;gap:11px;padding:22px 18px 20px;border-bottom:1px solid #1a1a2e}
+.sb-icon{width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.sb-name{font-size:15px;font-weight:700;color:#fff}
+.sb-ver{font-size:11px;color:#6366f1;font-weight:600;margin-top:1px}
+nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
+.ni{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13.5px;font-weight:500;color:#6b7280;transition:all .15s;user-select:none}
+.ni:hover,.ni.on{background:rgba(99,102,241,.12);color:#a5b4fc}
+.ni .ic{font-size:17px;flex-shrink:0}
+.lo{margin:0 10px 14px;padding:10px 12px;background:0;border:1px solid #1a1a2e;border-radius:10px;color:#6b7280;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .15s;font-family:inherit;width:calc(100% - 20px)}
+.lo:hover{background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.3)}
+
+/* ── Main ── */
+.main{margin-left:230px;padding:32px 38px;flex:1;min-height:100vh}
+.ph{margin-bottom:26px}
+.ph h1{font-size:22px;font-weight:700;color:#fff}
+.ph p{font-size:13px;color:#6b7280;margin-top:3px}
+.sec{display:none}.sec.on{display:block}
+
+/* ── Stat Cards ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:26px}
+.sc{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:14px;padding:20px}
+.sc-lbl{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.sc-val{font-size:30px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot.on{background:#22c55e;box-shadow:0 0 8px #22c55e88;animation:pu 2s infinite}
+.dot.off{background:#ef4444}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.3}}
+.sv{font-size:16px;font-weight:600}
+
+/* ── Box ── */
+.box{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:14px;padding:26px;max-width:460px;margin-bottom:22px}
+.box h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:7px}
+.box p{font-size:13px;color:#6b7280;line-height:1.65;margin-bottom:20px}
+.fg{margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:500;color:#9ca3af;margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+input[type=text],input[type=number]{width:100%;background:#07070f;border:1.5px solid #1a1a2e;border-radius:10px;padding:11px 14px;font-size:14px;color:#f3f4f6;outline:none;transition:border-color .2s;font-family:inherit}
+input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+input::placeholder{color:#252540}
+.btn{padding:11px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:13.5px;font-weight:600;border:none;border-radius:10px;cursor:pointer;transition:opacity .2s;font-family:inherit}
+.btn:hover{opacity:.88}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:7px}
+.btn-red{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.btn-yel{background:rgba(234,179,8,.1);color:#fbbf24;border:1px solid rgba(234,179,8,.3)}
+.btn-grn{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+
+/* ── Alerts ── */
+.al{padding:11px 14px;border-radius:9px;font-size:12.5px;display:none;margin:10px 0;line-height:1.5}
+.al-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#4ade80}
+.al-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171}
+.al-warn{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.25);color:#facc15}
+
+/* ── Code Box ── */
+.cbox{background:#07070f;border:2px dashed #6366f1;border-radius:12px;padding:22px;text-align:center;display:none;margin:16px 0}
+.cbox .clbl{font-size:12px;color:#6b7280;margin-bottom:8px}
+.cbox .code{font-size:34px;font-weight:800;letter-spacing:9px;color:#a5b4fc;font-family:'Courier New',monospace}
+.cbox .chint{font-size:11.5px;color:#4b5563;margin-top:9px;line-height:1.5}
+
+/* ── Table ── */
+.tbox{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:14px;overflow:hidden}
+.th{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #1a1a2e}
+.th h3{font-size:15px;font-weight:600;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{background:#09091a;padding:10px 18px;text-align:left;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+td{padding:13px 18px;font-size:13.5px;border-bottom:1px solid #1a1a2e}
+tr:last-child td{border:0}
+tr:hover td{background:rgba(99,102,241,.025)}
+.bge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.b-on{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25)}
+.b-ex{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.b-no{background:rgba(156,163,175,.1);color:#9ca3af;border:1px solid rgba(156,163,175,.2)}
+
+/* ── Add User Form ── */
+.af{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:14px;padding:22px;margin-bottom:20px}
+.af h3{font-size:15px;font-weight:600;color:#fff;margin-bottom:14px}
+.fr{display:grid;grid-template-columns:1fr 140px auto;gap:12px;align-items:end}
+.empty{text-align:center;padding:48px;color:#374151}
+.empty .em{font-size:46px;margin-bottom:10px}
+
+@media(max-width:768px){.sb{display:none}.main{margin-left:0;padding:18px}.fr{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="sb-icon">🤖</div>
+    <div><div class="sb-name">Botify X</div><div class="sb-ver">v1.0.3</div></div>
+  </div>
+  <nav>
+    <div class="ni on" id="n-ov" onclick="show('ov')"><span class="ic">📊</span> Overview</div>
+    <div class="ni"    id="n-co" onclick="show('co')"><span class="ic">📡</span> Connect Bot</div>
+    <div class="ni"    id="n-us" onclick="show('us')"><span class="ic">👥</span> Manage Users</div>
+  </nav>
+  <button class="lo" onclick="logout()"><span>🚪</span> Logout</button>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Overview -->
+  <div class="sec on" id="s-ov">
+    <div class="ph"><h1>Dashboard</h1><p>Botify X system overview</p></div>
+    <div class="cards">
+      <div class="sc"><div class="sc-lbl">Bot Status</div>
+        <div class="sc-val"><span class="dot off" id="sdot"></span><span class="sv" id="stxt">Offline</span></div></div>
+      <div class="sc"><div class="sc-lbl">Admin Number</div>
+        <div class="sc-val" id="sadm" style="font-size:15px;color:#6b7280;font-weight:500">Not set</div></div>
+      <div class="sc"><div class="sc-lbl">Total Users</div><div class="sc-val" id="stot">0</div></div>
+      <div class="sc"><div class="sc-lbl">Active Users</div><div class="sc-val" id="sact">0</div></div>
+    </div>
+    <div class="al al-warn" id="noConn" style="display:block;max-width:460px">
+      ⚠️ Bot not connected. Go to <strong>Connect Bot</strong> to pair your WhatsApp first.
+    </div>
+  </div>
+
+  <!-- Connect Bot -->
+  <div class="sec" id="s-co">
+    <div class="ph"><h1>Connect Bot</h1><p>Pair your WhatsApp with a pairing code</p></div>
+    <div class="box">
+      <h3>📡 WhatsApp Pairing</h3>
+      <p>Enter your phone number (country code + digits, no spaces or +). Then open WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number instead.</p>
+      <div class="al al-ok"  id="pOk"></div>
+      <div class="al al-err" id="pEr"></div>
+      <div id="pFrm">
+        <div class="fg"><label>Phone Number</label>
+          <input type="text" id="ph" placeholder="e.g. 447911123456 (no + or spaces)"/></div>
+        <button class="btn" id="pBtn" onclick="doPair()">Generate Pairing Code</button>
+      </div>
+      <div class="cbox" id="cb">
+        <div class="clbl">Your Pairing Code — valid for 60 seconds</div>
+        <div class="code" id="cc">--------</div>
+        <div class="chint">WhatsApp → Linked Devices → Link a Device → Link with phone number instead → Enter this code</div>
+      </div>
+      <div id="alConn" style="display:none">
+        <div class="al al-ok" style="display:block">✅ Bot is already connected to WhatsApp!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users -->
+  <div class="sec" id="s-us">
+    <div class="ph"><h1>Manage Users</h1><p>Add users and manage their access</p></div>
+    <div class="af">
+      <h3>Add New User</h3>
+      <div class="al al-ok"  id="aOk"></div>
+      <div class="al al-err" id="aEr"></div>
+      <div class="fr">
+        <div class="fg" style="margin:0"><label>Phone Number</label>
+          <input type="text" id="np" placeholder="e.g. 447911123456"/></div>
+        <div class="fg" style="margin:0"><label>Days</label>
+          <input type="number" id="nd" placeholder="30" min="1" max="3650" value="30"/></div>
+        <button class="btn" id="aBtn" onclick="addUser()" style="margin-top:18px">Add User</button>
+      </div>
+    </div>
+    <div class="tbox">
+      <div class="th"><h3>Users</h3><button class="btn btn-sm" onclick="loadUsers()">🔄 Refresh</button></div>
+      <div id="ub"><div class="empty"><div class="em">👥</div><p>Loading users…</p></div></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+function show(n){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+  document.getElementById('s-'+n).classList.add('on');
+  document.getElementById('n-'+n).classList.add('on');
+  if(n==='us') loadUsers();
+}
+
+async function loadStatus(){
+  try{
+    const s=await(await fetch('/panel/api/status')).json();
+    const dot=document.getElementById('sdot'),txt=document.getElementById('stxt'),
+          warn=document.getElementById('noConn'),adm=document.getElementById('sadm');
+    if(s.connected){dot.className='dot on';txt.textContent='Online';warn.style.display='none';}
+    else{dot.className='dot off';txt.textContent='Offline';warn.style.display='block';}
+    adm.textContent=s.adminNumber?'+'+s.adminNumber:'Not set';
+    adm.style.color=s.adminNumber?'#e5e7eb':'#6b7280';
+  }catch{}
+  try{
+    const u=await(await fetch('/panel/api/users')).json();
+    document.getElementById('stot').textContent=u.users.length;
+    document.getElementById('sact').textContent=u.users.filter(x=>x.active&&Date.now()<x.expiry).length;
+  }catch{}
+}
+
+async function doPair(){
+  const phone=document.getElementById('ph').value.replace(/\D/g,'');
+  const btn=document.getElementById('pBtn'),ok=document.getElementById('pOk'),er=document.getElementById('pEr');
+  ok.style.display=er.style.display='none';
+  if(!phone){er.textContent='Please enter your phone number.';er.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Generating…';
+  try{
+    const d=await(await fetch('/panel/api/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})})).json();
+    if(d.success&&d.code){
+      document.getElementById('cb').style.display='block';
+      document.getElementById('cc').textContent=d.code;
+      ok.textContent='✅ Code generated! Enter it in WhatsApp within 60 seconds.';ok.style.display='block';
+    }else if(d.message&&d.message.toLowerCase().includes('already')){
+      document.getElementById('alConn').style.display='block';
+      document.getElementById('pFrm').style.display='none';
+    }else{
+      er.textContent=d.message||'Failed to generate code.';er.style.display='block';
+    }
+  }catch{er.textContent='Network error.';er.style.display='block';}
+  btn.disabled=false;btn.textContent='Generate Pairing Code';
+}
+
+async function addUser(){
+  const phone=document.getElementById('np').value.replace(/\D/g,'');
+  const days=parseInt(document.getElementById('nd').value)||30;
+  const ok=document.getElementById('aOk'),er=document.getElementById('aEr'),btn=document.getElementById('aBtn');
+  ok.style.display=er.style.display='none';
+  if(!phone){er.textContent='Enter phone number.';er.style.display='block';return;}
+  btn.disabled=true;
+  try{
+    const d=await(await fetch('/panel/api/users/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,days})})).json();
+    if(d.success){ok.textContent=`✅ User ${phone} added for ${days} days.`;ok.style.display='block';document.getElementById('np').value='';loadUsers();loadStatus();}
+    else{er.textContent=d.message||'Error.';er.style.display='block';}
+  }catch{er.textContent='Network error.';er.style.display='block';}
+  btn.disabled=false;
+}
+
+async function removeUser(phone){
+  if(!confirm('Remove user '+phone+'?'))return;
+  await fetch('/panel/api/users/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+  loadUsers();loadStatus();
+}
+
+async function toggleUser(phone,active){
+  await fetch('/panel/api/users/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,active})});
+  loadUsers();loadStatus();
+}
+
+async function loadUsers(){
+  const c=document.getElementById('ub');
+  try{
+    const {users}=await(await fetch('/panel/api/users')).json();
+    if(!users.length){c.innerHTML='<div class="empty"><div class="em">👥</div><p>No users yet. Add one above.</p></div>';return;}
+    const now=Date.now();
+    let h='<table><thead><tr><th>Phone</th><th>Expiry Date</th><th>Days Left</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    for(const u of users){
+      const exp=new Date(u.expiry).toLocaleDateString('en-GB');
+      const dl=Math.max(0,Math.ceil((u.expiry-now)/86400000));
+      const isExp=now>u.expiry;
+      const badge=!u.active?'<span class="bge b-no">Inactive</span>':isExp?'<span class="bge b-ex">Expired</span>':'<span class="bge b-on">Active</span>';
+      const actBtn=u.active
+        ?`<button class="btn btn-sm btn-yel" onclick="toggleUser('${u.phone}',false)">Disable</button>`
+        :`<button class="btn btn-sm btn-grn" onclick="toggleUser('${u.phone}',true)">Enable</button>`;
+      h+=`<tr>
+        <td style="color:#fff;font-weight:600;font-family:monospace">${u.phone}</td>
+        <td style="color:#9ca3af">${exp}</td>
+        <td style="color:${dl<4&&!isExp?'#f87171':'#9ca3af'};font-weight:600">${isExp?'—':dl+'d'}</td>
+        <td>${badge}</td>
+        <td><div style="display:flex;gap:7px;flex-wrap:wrap">${actBtn}
+          <button class="btn btn-sm btn-red" onclick="removeUser('${u.phone}')">Remove</button>
+        </div></td></tr>`;
+    }
+    h+='</tbody></table>';c.innerHTML=h;
+  }catch{c.innerHTML='<div class="empty"><p>Failed to load users.</p></div>';}
+}
+
+async function logout(){
+  await fetch('/panel/logout',{method:'POST'});
+  window.location.href='/panel';
+}
+
+loadStatus();
+setInterval(loadStatus,6000);
+</script>
+</body>
+</html>
