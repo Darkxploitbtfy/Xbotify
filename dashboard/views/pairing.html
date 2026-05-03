@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Connect Botify X</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .box {
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .code {
+      margin-top: 20px;
+      font-size: 22px;
+      letter-spacing: 3px;
+      color: #38bdf8;
+    }
+
+    .msg {
+      margin-top: 10px;
+      color: #f87171;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Connect Botify X</h2>
+
+  <input id="phone" placeholder="Enter phone (e.g 234XXXXXXXXXX)" />
+
+  <button onclick="pair()">Generate Pairing Code</button>
+
+  <div class="code" id="code"></div>
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+async function pair() {
+  const phone = document.getElementById('phone').value;
+
+  if (!phone) {
+    document.getElementById('msg').innerText = "Enter phone number";
+    return;
+  }
+
+  document.getElementById('msg').innerText = "Generating...";
+
+  try {
+    const res = await fetch('/panel/api/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('code').innerText = data.code;
+      document.getElementById('msg').innerText = "Enter code on WhatsApp";
+    } else {
+      document.getElementById('msg').innerText = data.message;
+    }
+
+  } catch (e) {
+    document
