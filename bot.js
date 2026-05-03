@@ -43,15 +43,17 @@ async function startBot(phoneNumber) {
 
     const logger = pino({ level: 'silent' });
 
-    sock = makeWASocket({
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, logger)
-      },
-      logger,
-      browser: Browsers.macOS('Safari'),
-      printQRInTerminal: false
-    });
+    const sock = makeWASocket({
+  auth: {
+    creds: state.creds,
+    keys: makeCacheableSignalKeyStore(state.keys, logger)
+  },
+  logger,
+  browser: ['Mac OS', 'Safari', '10.15.7'], // 🔥 FIX
+  printQRInTerminal: false,
+  syncFullHistory: false,
+  markOnlineOnConnect: false
+});
 
     setSocket(sock);
 
