@@ -109,22 +109,21 @@ async function startBot(phoneNumber) {
     if (phoneNumber && !state.creds.registered) {
   console.log('[BOTIFY X] Preparing pairing...');
 
-  await new Promise(resolve => setTimeout(resolve, 6000));
+  await new Promise(resolve => setTimeout(resolve, 5000));
 
   try {
     const code = await sock.requestPairingCode(phoneNumber);
 
     console.log('[BOTIFY X] Pairing code:', code);
 
-    await new Promise(resolve => setTimeout(resolve, 10000));
-
     _starting = false;
     return code;
 
   } catch (err) {
-    console.error('[PAIR ERROR]', err.message);
+    console.error('[REAL ERROR]', err); // 👈 FULL ERROR
+
     _starting = false;
-    throw new Error('Failed to generate pairing code');
+    throw err; // 👈 DON'T HIDE IT
   }
     }
 
