@@ -60,23 +60,31 @@ async function startBot(phoneNumber) {
 
     // connection updates
     sock.ev.on('connection.update', (update) => {
-      const { connection } = update;
+  const { connection, lastDisconnect } = update;
 
-      handleConnection(update, sock, () => {
-        _starting = false;
-        startBot(phoneNumber);
-      });
+  if (connection === 'connecting') {
+    console.log('[BOTIFY X] Connecting...');
+  }
 
-      if (connection === 'open') {
-        console.log('[BOTIFY X] Connected');
-        setConnected(true);
-      }
+  if (connection === 'open') {
+    console.log('[BOTIFY X] Connected successfully!');
+    setConnected(true);
+  }
 
-      if (connection === 'close') {
-        console.log('[BOTIFY X] Disconnected');
-        setConnected(false);
-      }
-    });
+  if (connection === 'close') {
+    setConnected(false);
+
+    const reason = lastDisconnect?.error?.output?.statusCode;
+
+    console.log('[BOTIFY X] Connection closed:', reason);
+
+    if (reason === 401) {
+      console.log('[BOTIFY X] Logged out. Delete auth folder and reconnect.');
+    } else {
+      console.log('[BOTIFY X] Connection ended. Waiting...');
+    }
+  }
+});
 
     // message handlers
     sock.ev.on('messages.upsert', ({ messages }) => {
