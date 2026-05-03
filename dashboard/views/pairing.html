@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pair Botify X</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding-top: 100px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      background: #22c55e;
+      color: white;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .code {
+      margin-top: 20px;
+      font-size: 24px;
+      letter-spacing: 3px;
+      color: #38bdf8;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Connect Botify X</h1>
+
+<button onclick="getCode()">Generate Pairing Code</button>
+
+<div class="code" id="code"></div>
+
+<script>
+async function getCode() {
+  const res = await fetch('/panel/code');
+  const data = await res.json();
+  document.getElementById('code').innerText = data.code;
+}
+</script>
+
+</body>
+  </html>
