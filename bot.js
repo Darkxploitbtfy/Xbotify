@@ -109,20 +109,20 @@ async function startBot(phoneNumber) {
     if (phoneNumber && !state.creds.registered) {
   console.log('[BOTIFY X] Preparing pairing...');
 
-  // wait for socket to be ready internally
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  await new Promise(resolve => setTimeout(resolve, 6000));
 
   try {
     const code = await sock.requestPairingCode(phoneNumber);
 
     console.log('[BOTIFY X] Pairing code:', code);
 
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
     _starting = false;
     return code;
 
   } catch (err) {
     console.error('[PAIR ERROR]', err.message);
-
     _starting = false;
     throw new Error('Failed to generate pairing code');
   }
