@@ -1,81 +1,115 @@
 'use strict';
+
 const {
   default: makeWASocket,
   useMultiFileAuthState,
   Browsers,
-  makeCacheableSignalKeyStore,
-  DisconnectReason
+  makeCacheableSignalKeyStore
 } = require('@whiskeysockets/baileys');
+
 const pino = require('pino');
 const path = require('path');
 const fs   = require('fs');
 
-const { handleConnection }                              = require('./events/connection');
+const { handleConnection } = require('./events/connection');
 const { handleMessages, handleMessageDelete, handleCall } = require('./events/messages');
-const { handleGroupUpdate }                             = require('./events/groupUpdate');
-const { setSocket, setConnected }                       = require('./utils/botState');
+const { handleGroupUpdate } = require('./events/groupUpdate');
+const { setSocket, setConnected } = require('./utils/botState');
 
-// Store auth in /app/auth on Railway (same as __dirname/auth locally)
 const AUTH_DIR = process.env.AUTH_DIR || path.join(__dirname, 'auth');
 
+let sock = null;
 let _starting = false;
 
 async function startBot(phoneNumber) {
-  if (_starting) return null;
+  if (_starting) {
+    console.log('[BOTIFY X] Already starting...');
+    return null;
+  }
+
   _starting = true;
 
   try {
-    if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
+    // ensure auth folder exists
+    if (!fs.existsSync(AUTH_DIR)) {
+      fs.mkdirSync(AUTH_DIR, { recursive: true });
+    }
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+
     const logger = pino({ level: 'silent' });
 
-    const sock = makeWASocket({
+    sock = makeWASocket({
       auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger)
       },
       logger,
-      browser:                    Browsers.macOS('Safari'),
-      printQRInTerminal:          false,
-      generateHighQualityLinkPreview: false,
-      syncFullHistory:            false,
-      markOnlineOnConnect:        true,
-      connectTimeoutMs:           60000,
-      keepAliveIntervalMs:        25000,
-      retryRequestDelayMs:        2000
+      browser: Browsers.macOS('Safari'),
+      printQRInTerminal: false
     });
 
     setSocket(sock);
-    _starting = false;
 
+    // save session
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('connection.update', update => {
-      handleConnection(update, sock, () => { _starting = false; startBot(phoneNumber); });
-      if (update.connection === 'open')  setConnected(true);
-      if (update.connection === 'close') setConnected(false);
+    // connection updates
+    sock.ev.on('connection.update', (update) => {
+      const { connection } = update;
+
+      handleConnection(update, sock, () => {
+        _starting = false;
+        startBot(phoneNumber);
+      });
+
+      if (connection === 'open') {
+        console.log('[BOTIFY X] Connected');
+        setConnected(true);
+      }
+
+      if (connection === 'close') {
+        console.log('[BOTIFY X] Disconnected');
+        setConnected(false);
+      }
     });
 
-    sock.ev.on('messages.upsert', ({ messages }) => handleMessages(sock, { messages }));
-    sock.ev.on('messages.delete', u => handleMessageDelete(sock, u));
-    sock.ev.on('group-participants.update', ({ id, participants, action }) =>
-      handleGroupUpdate(sock, [{ id, participants, action }])
-    );
-    sock.ev.on('call', calls => handleCall(sock, calls));
+    // message handlers
+    sock.ev.on('messages.upsert', ({ messages }) => {
+      handleMessages(sock, { messages });
+    });
 
-    // Generate pairing code if not yet registered
+    sock.ev.on('messages.delete', (u) => {
+      handleMessageDelete(sock, u);
+    });
+
+    sock.ev.on('group-participants.update', ({ id, participants, action }) => {
+      handleGroupUpdate(sock, [{ id, participants, action }]);
+    });
+
+    sock.ev.on('call', (calls) => {
+      handleCall(sock, calls);
+    });
+
+    // 🔥 PAIRING (FIXED)
     if (phoneNumber && !state.creds.registered) {
-      await new Promise(r => setTimeout(r, 3000));
+      console.log('[BOTIFY X] Generating pairing code...');
+
       const code = await sock.requestPairingCode(phoneNumber);
-      console.log('[BOTIFY X] Pairing code issued.');
-      return code;
+
+      console.log('[BOTIFY X] Pairing code:', code);
+
+      _starting = false;
+      return code; // ✅ IMPORTANT
     }
 
-    return null;
-  } catch (e) {
     _starting = false;
-    throw e;
+    return null;
+
+  } catch (err) {
+    console.error('[BOTIFY X ERROR]', err);
+    _starting = false;
+    throw err;
   }
 }
 
