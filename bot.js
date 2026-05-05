@@ -32,8 +32,10 @@ async function startBot(phoneNumber) {
   _starting = true;
 
   try {
-    if (!fs.existsSync(AUTH_DIR)) {
-      fs.mkdirSync(AUTH_DIR, { recursive: true });
+    // 🔥 FORCE CLEAN SESSION (fix connection closed)
+    if (fs.existsSync(AUTH_DIR)) {
+      console.log('[BOTIFY X] Clearing old session...');
+      fs.rmSync(AUTH_DIR, { recursive: true, force: true });
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
@@ -45,7 +47,7 @@ async function startBot(phoneNumber) {
         keys: makeCacheableSignalKeyStore(state.keys, logger)
       },
       logger,
-      browser: ['Mac OS', 'Safari', '10.15.7'],
+      browser: ['Ubuntu', 'Chrome', '110.0.0'], // 🔥 stable fingerprint
       printQRInTerminal: false
     });
 
@@ -68,11 +70,11 @@ async function startBot(phoneNumber) {
       if (connection === 'close') {
         setConnected(false);
 
-        const statusCode = lastDisconnect?.error?.output?.statusCode;
-        console.log('[BOTIFY X] Connection closed:', statusCode);
+        const code = lastDisconnect?.error?.output?.statusCode;
+        console.log('[BOTIFY X] Connection closed:', code);
 
-        if (statusCode === DisconnectReason.loggedOut) {
-          console.log('[BOTIFY X] Logged out. Delete auth folder.');
+        if (code === DisconnectReason.loggedOut) {
+          console.log('[BOTIFY X] Logged out. Will need re-pair.');
         }
       }
     });
@@ -93,7 +95,7 @@ async function startBot(phoneNumber) {
       handleCall(sock, calls);
     });
 
-    // 🔥 FIXED PAIRING (NO DELAY)
+    // 🔥 PAIRING (IMMEDIATE + CLEAN)
     if (phoneNumber && !state.creds.registered) {
       console.log('[BOTIFY X] Generating pairing code...');
 
