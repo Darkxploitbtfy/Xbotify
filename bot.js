@@ -1,9 +1,7 @@
 'use strict';
-const crypto = require('crypto');
 
-if (!global.crypto) {
-  global.crypto = crypto;
-}
+const crypto = require('crypto');
+if (!global.crypto) global.crypto = crypto;
 
 const {
   default: makeWASocket,
@@ -22,7 +20,7 @@ const { setSocket, setConnected } = require('./utils/botState');
 
 const AUTH_DIR = process.env.AUTH_DIR || path.join(__dirname, 'auth');
 
-let sock     = null;
+let sock = null;
 let _starting = false;
 
 async function startBot(phoneNumber) {
@@ -39,7 +37,6 @@ async function startBot(phoneNumber) {
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-
     const logger = pino({ level: 'silent' });
 
     sock = makeWASocket({
@@ -49,11 +46,7 @@ async function startBot(phoneNumber) {
       },
       logger,
       browser: ['Mac OS', 'Safari', '10.15.7'],
-      printQRInTerminal: false,
-      syncFullHistory: false,
-      markOnlineOnConnect: false,
-      connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 10000
+      printQRInTerminal: false
     });
 
     setSocket(sock);
@@ -70,15 +63,16 @@ async function startBot(phoneNumber) {
       if (connection === 'open') {
         console.log('[BOTIFY X] Connected successfully!');
         setConnected(true);
-        _starting = false;
       }
 
       if (connection === 'close') {
         setConnected(false);
+
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        console.log('[BOTIFY X] Connection closed. Code:', statusCode);
+        console.log('[BOTIFY X] Connection closed:', statusCode);
+
         if (statusCode === DisconnectReason.loggedOut) {
-          console.log('[BOTIFY X] Logged out. Delete auth folder and reconnect.');
+          console.log('[BOTIFY X] Logged out. Delete auth folder.');
         }
       }
     });
@@ -99,15 +93,16 @@ async function startBot(phoneNumber) {
       handleCall(sock, calls);
     });
 
+    // 🔥 FIXED PAIRING (NO DELAY)
     if (phoneNumber && !state.creds.registered) {
-      console.log('[BOTIFY X] Waiting before requesting pairing code...');
-
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      console.log('[BOTIFY X] Generating pairing code...');
 
       const clean = String(phoneNumber).replace(/\D/g, '');
+
       const code = await sock.requestPairingCode(clean);
 
-      console.log('[BOTIFY X] Pairing code generated:', code);
+      console.log('[BOTIFY X] Pairing code:', code);
+
       _starting = false;
       return code;
     }
