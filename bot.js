@@ -4,25 +4,25 @@ const crypto = require('crypto');
 if (!global.crypto) {
   global.crypto = crypto;
 }
+
 const {
   default: makeWASocket,
   useMultiFileAuthState,
-  Browsers,
-  makeCacheableSignalKeyStore
+  makeCacheableSignalKeyStore,
+  DisconnectReason
 } = require('@whiskeysockets/baileys');
 
 const pino = require('pino');
 const path = require('path');
 const fs   = require('fs');
 
-const { handleConnection } = require('./events/connection');
 const { handleMessages, handleMessageDelete, handleCall } = require('./events/messages');
 const { handleGroupUpdate } = require('./events/groupUpdate');
 const { setSocket, setConnected } = require('./utils/botState');
 
 const AUTH_DIR = process.env.AUTH_DIR || path.join(__dirname, 'auth');
 
-let sock = null;
+let sock     = null;
 let _starting = false;
 
 async function startBot(phoneNumber) {
@@ -34,7 +34,6 @@ async function startBot(phoneNumber) {
   _starting = true;
 
   try {
-    // ensure auth folder exists
     if (!fs.existsSync(AUTH_DIR)) {
       fs.mkdirSync(AUTH_DIR, { recursive: true });
     }
@@ -43,52 +42,47 @@ async function startBot(phoneNumber) {
 
     const logger = pino({ level: 'silent' });
 
-    const sock = makeWASocket({
-  auth: {
-    creds: state.creds,
-    keys: makeCacheableSignalKeyStore(state.keys, logger)
-  },
-  logger,
-  browser: ['Mac OS', 'Safari', '10.15.7'], // 🔥 FIX
-  printQRInTerminal: false,
-  syncFullHistory: false,
-  markOnlineOnConnect: false
-});
+    sock = makeWASocket({
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, logger)
+      },
+      logger,
+      browser: ['Mac OS', 'Safari', '10.15.7'],
+      printQRInTerminal: false,
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
+      connectTimeoutMs: 60000,
+      keepAliveIntervalMs: 10000
+    });
 
     setSocket(sock);
 
-    // save session
     sock.ev.on('creds.update', saveCreds);
 
-    // connection updates
     sock.ev.on('connection.update', (update) => {
-  const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect } = update;
 
-  if (connection === 'connecting') {
-    console.log('[BOTIFY X] Connecting...');
-  }
+      if (connection === 'connecting') {
+        console.log('[BOTIFY X] Connecting...');
+      }
 
-  if (connection === 'open') {
-    console.log('[BOTIFY X] Connected successfully!');
-    setConnected(true);
-  }
+      if (connection === 'open') {
+        console.log('[BOTIFY X] Connected successfully!');
+        setConnected(true);
+        _starting = false;
+      }
 
-  if (connection === 'close') {
-    setConnected(false);
+      if (connection === 'close') {
+        setConnected(false);
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        console.log('[BOTIFY X] Connection closed. Code:', statusCode);
+        if (statusCode === DisconnectReason.loggedOut) {
+          console.log('[BOTIFY X] Logged out. Delete auth folder and reconnect.');
+        }
+      }
+    });
 
-    const reason = lastDisconnect?.error?.output?.statusCode;
-
-    console.log('[BOTIFY X] Connection closed:', reason);
-
-    if (reason === 401) {
-      console.log('[BOTIFY X] Logged out. Delete auth folder and reconnect.');
-    } else {
-      console.log('[BOTIFY X] Connection ended. Waiting...');
-    }
-  }
-});
-
-    // message handlers
     sock.ev.on('messages.upsert', ({ messages }) => {
       handleMessages(sock, { messages });
     });
@@ -105,26 +99,17 @@ async function startBot(phoneNumber) {
       handleCall(sock, calls);
     });
 
-    // 🔥 PAIRING (FIXED)
     if (phoneNumber && !state.creds.registered) {
-  console.log('[BOTIFY X] Preparing pairing...');
+      console.log('[BOTIFY X] Waiting before requesting pairing code...');
 
-  await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 6000));
 
-  try {
-    const code = await sock.requestPairingCode(phoneNumber);
+      const clean = String(phoneNumber).replace(/\D/g, '');
+      const code = await sock.requestPairingCode(clean);
 
-    console.log('[BOTIFY X] Pairing code:', code);
-
-    _starting = false;
-    return code;
-
-  } catch (err) {
-    console.error('[REAL ERROR]', err); // 👈 FULL ERROR
-
-    _starting = false;
-    throw err; // 👈 DON'T HIDE IT
-  }
+      console.log('[BOTIFY X] Pairing code generated:', code);
+      _starting = false;
+      return code;
     }
 
     _starting = false;
