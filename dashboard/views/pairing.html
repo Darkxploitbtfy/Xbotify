@@ -1,119 +1,204 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Connect Botify X</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #0b1220;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  color: white;
-}
+    *, *::before, *::after { box-sizing: border-box; }
 
-.box {
-  width: 90%;
-  max-width: 360px;
-  background: #111827;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  text-align: center;
-}
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0b1220;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #ffffff;
+    }
 
-input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  margin-top: 15px;
-  font-size: 15px;
-}
+    .box {
+      width: 100%;
+      max-width: 340px;
+      background: #111827;
+      padding: 32px 28px;
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
 
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  border: none;
-  border-radius: 8px;
-  background: #22c55e;
-  color: white;
-  font-size: 15px;
-  cursor: pointer;
-}
+    .box h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      color: #f0f0f0;
+    }
 
-button:hover {
-  background: #16a34a;
-}
+    .box p {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
 
-.code {
-  margin-top: 15px;
-  font-size: 20px;
-  letter-spacing: 2px;
-  color: #60a5fa;
-}
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      background: #1f2937;
+      color: #ffffff;
+      font-size: 15px;
+      outline: none;
+    }
 
-.msg {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #f87171;
-}
+    input:focus {
+      border-color: #22c55e;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover:not(:disabled) {
+      background: #16a34a;
+    }
+
+    button:disabled {
+      background: #4b5563;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #9ca3af;
+      display: none;
+    }
+
+    .code-box {
+      margin-top: 20px;
+      padding: 16px;
+      background: #1f2937;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .code-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .code {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #60a5fa;
+    }
+
+    .code-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .error {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #f87171;
+      display: none;
+    }
   </style>
 </head>
-
 <body>
 
 <div class="box">
   <h2>Connect Botify X</h2>
+  <p>Enter your WhatsApp number to get a pairing code</p>
 
-  <input id="phone" placeholder="Enter phone (e.g 234XXXXXXXXXX)" />
+  <input
+    id="phone"
+    type="tel"
+    placeholder="e.g. 2348012345678"
+    autocomplete="off"
+  />
 
-  <button onclick="pair()">Generate Pairing Code</button>
+  <button id="btn" onclick="pair()">Generate Pairing Code</button>
 
-  <div class="code" id="code"></div>
-  <div class="msg" id="msg"></div>
+  <div class="loading" id="loading">Generating pairing code, please wait…</div>
+
+  <div class="code-box" id="codeBox">
+    <div class="code-label">Your pairing code</div>
+    <div class="code" id="codeText"></div>
+    <div class="code-hint">Open WhatsApp → Linked Devices → Link a Device → Enter this code</div>
+  </div>
+
+  <div class="error" id="error"></div>
 </div>
 
 <script>
-async function pair() {
-  const phone = document.getElementById('phone').value;
-  const msg = document.getElementById('msg');
-  const codeBox = document.getElementById('code');
+  async function pair() {
+    const phone   = document.getElementById('phone').value.trim();
+    const btn     = document.getElementById('btn');
+    const loading = document.getElementById('loading');
+    const codeBox = document.getElementById('codeBox');
+    const codeText = document.getElementById('codeText');
+    const error   = document.getElementById('error');
 
-  if (!phone) {
-    msg.innerText = "Enter phone number";
-    return;
-  }
+    error.style.display   = 'none';
+    codeBox.style.display = 'none';
+    error.innerText       = '';
 
-  msg.innerText = "Generating pairing code...";
-  codeBox.innerText = "";
-
-  try {
-    const res = await fetch('/panel/api/pair', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone })
-    });
-
-    const data = await res.json();
-
-    console.log("PAIR RESPONSE:", data); // 🔥 DEBUG
-
-    if (data.success && data.code) {
-      codeBox.innerText = data.code;
-      msg.innerText = "Enter this code on WhatsApp";
-    } else {
-      msg.innerText = data.message || "Failed to generate code";
+    if (!phone) {
+      error.innerText       = 'Please enter your phone number.';
+      error.style.display   = 'block';
+      return;
     }
 
-  } catch (err) {
-    console.error(err);
-    msg.innerText = "Server error. Check backend.";
+    btn.disabled          = true;
+    loading.style.display = 'block';
+
+    try {
+      const res = await fetch('/panel/api/pair', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.code) {
+        codeText.innerText    = data.code;
+        codeBox.style.display = 'block';
+      } else {
+        error.innerText     = data.message || 'Failed to generate pairing code.';
+        error.style.display = 'block';
+        btn.disabled        = false;
+      }
+    } catch (err) {
+      console.error(err);
+      error.innerText     = 'Server error. Please try again.';
+      error.style.display = 'block';
+      btn.disabled        = false;
+    } finally {
+      loading.style.display = 'none';
+    }
   }
-}
+
+  document.getElementById('phone').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') pair();
+  });
 </script>
+
+</body>
+  </html>
