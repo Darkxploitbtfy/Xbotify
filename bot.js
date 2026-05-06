@@ -1,121 +1,99 @@
 'use strict';
 
-const crypto = require('crypto');
-if (!global.crypto) global.crypto = crypto;
-
 const {
   default: makeWASocket,
   useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  DisconnectReason,
   makeCacheableSignalKeyStore,
-  DisconnectReason
 } = require('@whiskeysockets/baileys');
 
 const pino = require('pino');
+const fs = require('fs');
 const path = require('path');
-const fs   = require('fs');
 
-const { handleMessages, handleMessageDelete, handleCall } = require('./events/messages');
-const { handleGroupUpdate } = require('./events/groupUpdate');
-const { setSocket, setConnected } = require('./utils/botState');
+const { setConnected, setSocket } = require('./utils/botState');
 
-const AUTH_DIR = process.env.AUTH_DIR || path.join(__dirname, 'auth');
+const AUTH_DIR = path.join(__dirname, 'auth');
 
-let sock = null;
-let _starting = false;
+let sock;
+let starting = false;
 
 async function startBot(phoneNumber) {
-  if (_starting) {
-    console.log('[BOTIFY X] Already starting...');
-    return null;
-  }
-
-  _starting = true;
+  if (starting) return null;
+  starting = true;
 
   try {
-    // 🔥 FORCE CLEAN SESSION (fix connection closed)
-    if (fs.existsSync(AUTH_DIR)) {
-      console.log('[BOTIFY X] Clearing old session...');
-      fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+    if (!fs.existsSync(AUTH_DIR)) {
+      fs.mkdirSync(AUTH_DIR, { recursive: true });
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-    const logger = pino({ level: 'silent' });
+    const { version } = await fetchLatestBaileysVersion();
 
     sock = makeWASocket({
+      version,
       auth: {
         creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, logger)
+        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
       },
-      logger,
-      browser: ['Ubuntu', 'Chrome', '110.0.0'], // 🔥 stable fingerprint
-      printQRInTerminal: false
+      printQRInTerminal: false,
+      browser: ['Mac OS', 'Safari', '10.15.7'],
     });
 
     setSocket(sock);
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect } = update;
 
-      if (connection === 'connecting') {
-        console.log('[BOTIFY X] Connecting...');
-      }
-
       if (connection === 'open') {
-        console.log('[BOTIFY X] Connected successfully!');
+        console.log('✅ Connected!');
         setConnected(true);
+        starting = false;
       }
 
       if (connection === 'close') {
         setConnected(false);
 
         const code = lastDisconnect?.error?.output?.statusCode;
-        console.log('[BOTIFY X] Connection closed:', code);
+        console.log('❌ Connection closed:', code);
 
-        if (code === DisconnectReason.loggedOut) {
-          console.log('[BOTIFY X] Logged out. Will need re-pair.');
+        // reconnect except logout
+        if (code !== DisconnectReason.loggedOut) {
+          console.log('🔄 Reconnecting...');
+          startBot(phoneNumber);
+        } else {
+          console.log('⚠️ Logged out. Delete auth folder.');
         }
+
+        starting = false;
       }
     });
 
-    sock.ev.on('messages.upsert', ({ messages }) => {
-      handleMessages(sock, { messages });
-    });
+    // 🔥 IMPORTANT FIX: delay pairing properly
+    if (!state.creds.registered && phoneNumber) {
+      console.log('⏳ Waiting before pairing...');
+      await new Promise(r => setTimeout(r, 5000));
 
-    sock.ev.on('messages.delete', (u) => {
-      handleMessageDelete(sock, u);
-    });
-
-    sock.ev.on('group-participants.update', ({ id, participants, action }) => {
-      handleGroupUpdate(sock, [{ id, participants, action }]);
-    });
-
-    sock.ev.on('call', (calls) => {
-      handleCall(sock, calls);
-    });
-
-    // 🔥 PAIRING (IMMEDIATE + CLEAN)
-    if (phoneNumber && !state.creds.registered) {
-      console.log('[BOTIFY X] Generating pairing code...');
-
-      const clean = String(phoneNumber).replace(/\D/g, '');
+      const clean = phoneNumber.replace(/\D/g, '');
 
       const code = await sock.requestPairingCode(clean);
 
-      console.log('[BOTIFY X] Pairing code:', code);
+      console.log('🔥 Pairing code:', code);
 
-      _starting = false;
+      starting = false;
       return code;
     }
 
-    _starting = false;
+    starting = false;
     return null;
 
   } catch (err) {
-    console.error('[BOTIFY X ERROR]', err);
-    _starting = false;
-    throw err;
+    console.error('❌ BOT ERROR:', err);
+    starting = false;
+    return null;
   }
 }
 
