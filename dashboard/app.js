@@ -4,7 +4,7 @@ const session    = require('express-session');
 const bodyParser = require('body-parser');
 const path       = require('path');
 
-const { startBot } = require('../bot');
+const sessionManager = require('../utils/sessionManager');
 const { addUser, removeUser, getUsers, updateUser } = require('../utils/dataManager');
 const { setAdminNumber, getAdminNumber, isConnected } = require('../utils/botState');
 
