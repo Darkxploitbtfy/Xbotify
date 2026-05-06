@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect Botify X</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0b1220;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+    }
+    .box {
+      width: 100%;
+      max-width: 360px;
+      background: #111827;
+      padding: 36px 28px;
+      border-radius: 16px;
+      box-shadow: 0 16px 50px rgba(0,0,0,.6);
+      text-align: center;
+    }
+    .logo { font-size: 44px; margin-bottom: 4px; }
+    .box h2 { margin: 0 0 6px; font-size: 21px; color: #f0f0f0; }
+    .box .sub { margin: 0 0 22px; font-size: 13px; color: #9ca3af; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 9px;
+      border: 1.5px solid #374151;
+      background: #1f2937;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: #22c55e; }
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    button:hover:not(:disabled) { opacity: .88; }
+    button:disabled { background: #4b5563; cursor: not-allowed; }
+    .loading { margin-top: 14px; font-size: 13px; color: #9ca3af; display: none; }
+    .code-box {
+      margin-top: 22px;
+      padding: 20px;
+      background: #1f2937;
+      border-radius: 12px;
+      border: 2px dashed #22c55e;
+      display: none;
+    }
+    .code-label { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+    .code { font-size: 30px; font-weight: 800; letter-spacing: 6px; color: #34d399; font-family: 'Courier New', monospace; }
+    .code-hint { margin-top: 10px; font-size: 12px; color: #6b7280; line-height: 1.5; }
+    .poll-status {
+      margin-top: 16px;
+      padding: 11px 14px;
+      border-radius: 9px;
+      font-size: 13px;
+      background: rgba(99,102,241,.1);
+      border: 1px solid rgba(99,102,241,.3);
+      color: #a5b4fc;
+      display: none;
+    }
+    .poll-status.ok {
+      background: rgba(34,197,94,.1);
+      border-color: rgba(34,197,94,.3);
+      color: #4ade80;
+    }
+    .error { margin-top: 14px; font-size: 13px; color: #f87171; display: none; }
+    .steps {
+      margin-top: 20px;
+      text-align: left;
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.9;
+    }
+    .steps b { color: #9ca3af; }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <div class="logo">🤖</div>
+  <h2>Connect Botify X</h2>
+  <p class="sub">Pair your WhatsApp to activate the bot</p>
+
+  <input id="phone" type="tel" placeholder="e.g. 2348012345678 (no + or spaces)" autocomplete="off" />
+  <button id="btn" onclick="pair()">Generate Pairing Code</button>
+
+  <div class="loading" id="loading">⏳ Generating pairing code, please wait…</div>
+
+  <div class="code-box" id="codeBox">
+    <div class="code-label">🔑 Your Pairing Code — valid for 60 seconds</div>
+    <div class="code" id="codeText">--------</div>
+    <div class="code-hint">
+      Open WhatsApp → ⋮ Menu → <b>Linked Devices</b><br>
+      → <b>Link a Device</b> → <b>Link with phone number instead</b><br>
+      → Enter the code above
+    </div>
+  </div>
+
+  <div class="poll-status" id="pollStatus">🔄 Waiting for you to enter the code in WhatsApp…</div>
+
+  <div class="error" id="error"></div>
+
+  <div class="steps" id="steps" style="display:none">
+    <b>Steps:</b><br>
+    1️⃣ Open WhatsApp on your phone<br>
+    2️⃣ Tap ⋮ → Settings → Linked Devices<br>
+    3️⃣ Tap "Link a Device"<br>
+    4️⃣ Choose "Link with phone number"<br>
+    5️⃣ Enter the code shown above
+  </div>
+</div>
+
+<script>
+  let pollTimer = null;
+
+  async function pair() {
+    const phone   = document.getElementById('phone').value.trim();
+    const btn     = document.getElementById('btn');
+    const loading = document.getElementById('loading');
+    const codeBox = document.getElementById('codeBox');
+    const codeText = document.getElementById('codeText');
+    const error   = document.getElementById('error');
+    const steps   = document.getElementById('steps');
+
+    error.style.display = 'none';
+    codeBox.style.display = 'none';
+
+    if (!phone) {
+      error.textContent = '❌ Please enter your phone number with country code.';
+      error.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    loading.style.display = 'block';
+
+    try {
+      const res  = await fetch('/panel/api/pair', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.alreadyConnected) {
+        window.location.href = '/panel/dashboard';
+        return;
+      }
+
+      if (data.success && data.code) {
+        codeText.textContent  = data.code;
+        codeBox.style.display = 'block';
+        steps.style.display   = 'block';
+        startPolling();
+      } else {
+        error.textContent   = data.message || 'Failed to generate pairing code.';
+        error.style.display = 'block';
+        btn.disabled        = false;
+      }
+    } catch {
+      error.textContent   = '❌ Server error. Please try again.';
+      error.style.display = 'block';
+      btn.disabled        = false;
+    } finally {
+      loading.style.display = 'none';
+    }
+  }
+
+  function startPolling() {
+    const pollEl = document.getElementById('pollStatus');
+    pollEl.style.display = 'block';
+    pollEl.className     = 'poll-status';
+    pollEl.textContent   = '🔄 Waiting for you to enter the code in WhatsApp…';
+
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        const res  = await fetch('/panel/api/status');
+        const data = await res.json();
+        if (data.connected) {
+          clearInterval(pollTimer);
+          pollEl.className   = 'poll-status ok';
+          pollEl.textContent = '✅ Connected! Redirecting to dashboard…';
+          setTimeout(() => { window.location.href = '/panel/dashboard'; }, 1200);
+        }
+      } catch {}
+    }, 3000);
+  }
+
+  document.getElementById('phone').addEventListener('keydown', e => {
+    if (e.key === 'Enter') pair();
+  });
+</script>
+</body>
+</html>
