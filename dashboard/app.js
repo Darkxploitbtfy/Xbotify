@@ -1,12 +1,14 @@
 'use strict';
+
 const express    = require('express');
 const session    = require('express-session');
 const bodyParser = require('body-parser');
 const path       = require('path');
 
-const sessionManager = require('../utils/sessionManager');
+const sessionManager = require('../utils/sessionManager'); // ✅ NEW
+
 const { addUser, removeUser, getUsers, updateUser } = require('../utils/dataManager');
-const { setAdminNumber, getAdminNumber, isConnected } = require('../utils/botState');
+const { getAdminNumber, isConnected } = require('../utils/botState');
 
 const CREDS  = { username: 'katson', password: '#jesusfuckingchrist#' };
 const SECRET = process.env.SESSION_SECRET || 'botifyx-session-secret-2024';
@@ -65,6 +67,7 @@ function createDashboard() {
     req.session.destroy(() => res.json({ success: true }));
   });
 
+  // ✅ FIXED PAIRING ROUTE
   app.post('/panel/api/pair', requireAuth, async (req, res) => {
     const { phone } = req.body;
 
@@ -78,24 +81,27 @@ function createDashboard() {
       return res.json({ success: false, message: 'Invalid phone number.' });
     }
 
-    if (isConnected()) {
-      return res.json({ success: false, message: 'Bot already connected.' });
-    }
-
     try {
-      setAdminNumber(clean);
+      const result = await sessionManager.requestOwnerPairing(clean);
 
-      const code = await startBot(clean);
-
-      if (code) {
-        return res.json({ success: true, code });
+      if (result?.pairingCode) {
+        return res.json({
+          success: true,
+          code: result.pairingCode
+        });
       }
 
-      return res.json({ success: false, message: 'Failed to generate pairing code.' });
+      return res.json({
+        success: false,
+        message: 'Failed to generate pairing code.'
+      });
 
     } catch (e) {
       console.error('[PAIR ERROR]', e);
-      return res.json({ success: false, message: e.message || 'Unknown error occurred.' });
+      return res.json({
+        success: false,
+        message: e.message || 'Unknown error occurred.'
+      });
     }
   });
 
