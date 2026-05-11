@@ -1,4 +1,4 @@
-# Botify X v1.0.3
+# Botify X v1.1.4
 
 WhatsApp Bot + Web Management Panel  
 Runs on Railway. No QR code — pairing code only.
