@@ -4,7 +4,7 @@ async function handle({ sock, from }) {
   await sock.sendMessage(from, { text: '⏳ _Checking response time…_' });
   const ms = Date.now() - start;
   await sock.sendMessage(from, {
-    text: `🏓 *Pong!*\n\n⚡ *Response Time:* ${ms}ms\n🤖 *Bot:* BOTIFY X v1.1.4\n🟢 *Status:* Online & Ready`
+    text: `*🔹 BOTIFY-X Speed:* 145.18 ms ${ms}ms\n🤖`
   });
 }
 module.exports = { handle };
