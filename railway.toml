@@ -1,0 +1,30 @@
+# Botify X v1.1.4 — Railway deployment configuration
+#
+# ──────────────────────────────────────────────────────────────────────
+# VOLUMES  (create these in Railway Dashboard → your service → Volumes)
+#
+#   Mount 1:  /app/auth   ← WhatsApp session credentials (one folder
+#                            per linked number — owner and every buyer).
+#                            Without this, every redeploy forces a full
+#                            re-pair for everyone.
+#
+#   Mount 2:  /app/data   ← users.json, settings.json, state-*.json,
+#                            warnings.json, owner.json.
+#                            Without this, all user access records and
+#                            bot toggle settings are wiped on every
+#                            redeploy.
+#
+# How to add:
+#   Railway Dashboard → your service → Settings → Volumes → Add Volume
+#   Create volume, set Mount Path to /app/auth  (repeat for /app/data)
+# ──────────────────────────────────────────────────────────────────────
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "node index.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+healthcheckPath = "/panel"
+healthcheckTimeout = 30
