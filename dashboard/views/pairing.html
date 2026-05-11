@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Botify X — Portal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d0f15;--surface:#13161f;--card:#181c27;--border:#222638;
+    --gold:#c9a84c;--gold2:#e8c96e;--green:#2ea87e;--green2:#3dcba0;
+    --red:#d95f5f;--text:#e4e4e4;--muted:#6e7485;--faint:#1e2130;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);font-family:'Inter',system-ui,sans-serif;color:var(--text);
+    min-height:100vh;
+    background-image:radial-gradient(ellipse at 15% 0%,rgba(201,168,76,.07) 0%,transparent 55%),
+                     radial-gradient(ellipse at 85% 100%,rgba(46,168,126,.05) 0%,transparent 55%);
+  }
+  .hdr{
+    position:sticky;top:0;z-index:200;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:15px 36px;background:rgba(13,15,21,.88);
+    border-bottom:1px solid var(--border);backdrop-filter:blur(12px);
+  }
+  .hdr-brand{display:flex;align-items:center;gap:11px}
+  .hdr-ico{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--gold),#8a6020);display:flex;align-items:center;justify-content:center;font-size:17px}
+  .hdr-name{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold)}
+  .hdr-ver{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:1px}
+  .hdr-logout{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 15px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+  .hdr-logout:hover{border-color:var(--red);color:var(--red);background:rgba(217,95,95,.06)}
+  .page{max-width:800px;margin:0 auto;padding:36px 22px 80px}
+  .conn-bar{display:flex;align-items:center;gap:16px;padding:18px 24px;border-radius:14px;border:1px solid;margin-bottom:34px;transition:all .3s}
+  .conn-bar.on{background:rgba(46,168,126,.07);border-color:rgba(46,168,126,.3)}
+  .conn-bar.off{background:rgba(217,95,95,.06);border-color:rgba(217,95,95,.25)}
+  .pulse{width:11px;height:11px;border-radius:50%;flex-shrink:0;background:var(--green);box-shadow:0 0 0 0 rgba(46,168,126,.5);animation:pu 2s infinite}
+  .pulse.off{background:var(--red);animation:none;box-shadow:none}
+  @keyframes pu{0%{box-shadow:0 0 0 0 rgba(46,168,126,.5)}70%{box-shadow:0 0 0 8px rgba(46,168,126,0)}100%{box-shadow:0 0 0 0 rgba(46,168,126,0)}}
+  .conn-info{flex:1}
+  .conn-lbl{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .conn-num{font-size:20px;font-weight:700;font-family:'Playfair Display',serif}
+  .conn-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .div-row{display:flex;align-items:center;gap:14px;margin:32px 0 24px}
+  .div-line{flex:1;height:1px;background:var(--border)}
+  .div-lbl{font-family:'Playfair Display',serif;font-size:12.5px;color:var(--gold);letter-spacing:.5px;white-space:nowrap}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:28px 26px;margin-bottom:18px}
+  .card-title{font-family:'Playfair Display',serif;font-size:16.5px;font-weight:600;color:var(--text);margin-bottom:5px}
+  .card-sub{font-size:12.5px;color:var(--muted);line-height:1.65;margin-bottom:20px}
+  label{display:block;font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .fg{margin-bottom:16px}
+  .row{display:flex;gap:12px;align-items:flex-end}
+  .row .fg{flex:1;margin-bottom:0}
+  .row .fg-sm{width:108px;flex-shrink:0;margin-bottom:0}
+  input[type=tel],input[type=number]{
+    width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;
+    padding:10px 13px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;
+    outline:none;transition:border-color .2s,box-shadow .2s;
+  }
+  input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1)}
+  input::placeholder{color:#2d3045}
+  .btn{padding:10px 20px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s,transform .1s;white-space:nowrap}
+  .btn:hover:not(:disabled){opacity:.86}
+  .btn:active:not(:disabled){transform:scale(.98)}
+  .btn:disabled{opacity:.42;cursor:not-allowed}
+  .btn-gold{background:linear-gradient(135deg,var(--gold),#8a6020);color:#0d0f15}
+  .btn-green{background:linear-gradient(135deg,var(--green),#1d8a65);color:#fff}
+  .btn-sm{padding:5px 11px;font-size:11.5px;border-radius:7px}
+  .btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);transition:all .2s}
+  .btn-ghost:hover{border-color:var(--red);color:var(--red);background:rgba(217,95,95,.06)}
+  .btn-ghost-grn:hover{border-color:rgba(46,168,126,.4);color:var(--green2);background:rgba(46,168,126,.06)}
+  .btn-ghost-yel:hover{border-color:rgba(201,168,76,.4);color:var(--gold2);background:rgba(201,168,76,.06)}
+  .al{padding:10px 13px;border-radius:8px;font-size:12px;line-height:1.55;display:none;margin:10px 0}
+  .al-ok{background:rgba(46,168,126,.09);border:1px solid rgba(46,168,126,.3);color:var(--green2)}
+  .al-err{background:rgba(217,95,95,.09);border:1px solid rgba(217,95,95,.3);color:#e88080}
+  .al-info{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.28);color:var(--gold2)}
+  .code-box{background:var(--bg);border:2px dashed var(--gold);border-radius:12px;padding:22px;text-align:center;display:none;margin:14px 0}
+  .code-lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .code-val{font-size:34px;font-weight:700;letter-spacing:10px;color:var(--gold2);font-family:'Playfair Display',serif}
+  .code-hint{margin-top:11px;font-size:11px;color:var(--muted);line-height:1.75}
+  .code-hint b{color:#9ca3af}
+  .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:15px;overflow:hidden}
+  .tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border)}
+  .tbl-hdr h3{font-size:14px;font-weight:600;color:var(--text);font-family:'Playfair Display',serif}
+  table{width:100%;border-collapse:collapse}
+  thead th{background:var(--bg);padding:9px 18px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+  tbody td{padding:12px 18px;font-size:13px;border-bottom:1px solid var(--faint)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(201,168,76,.015)}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+  .b-on{background:rgba(46,168,126,.12);border:1px solid rgba(46,168,126,.3);color:var(--green2)}
+  .b-ex{background:rgba(217,95,95,.12);border:1px solid rgba(217,95,95,.3);color:#e88080}
+  .b-off{background:rgba(110,116,133,.1);border:1px solid rgba(110,116,133,.25);color:var(--muted)}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(201,168,76,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin-right:7px;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{text-align:center;padding:48px 20px;color:var(--muted)}
+  .empty .ico{font-size:38px;margin-bottom:10px;opacity:.4}
+  @media(max-width:580px){
+    .hdr{padding:13px 16px}.page{padding:20px 14px 60px}.card{padding:20px 16px}
+    .row{flex-direction:column}.row .fg-sm{width:100%}
+    thead th:nth-child(2),tbody td:nth-child(2){display:none}
+  }
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-ico">🤖</div>
+    <div><div class="hdr-name">Botify X</div><div class="hdr-ver">v1.1.4 &nbsp;·&nbsp; Portal</div></div>
+  </div>
+  <button class="hdr-logout" onclick="logout()">Sign Out</button>
+</header>
+
+<div class="page">
+
+  <!-- Connection banner -->
+  <div class="conn-bar off" id="connBar">
+    <div class="pulse off" id="connPulse"></div>
+    <div class="conn-info">
+      <div class="conn-lbl">WhatsApp Connection</div>
+      <div class="conn-num" id="connNum">Not Connected</div>
+      <div class="conn-sub" id="connSub">Link your number below to activate the bot</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: Owner pairing -->
+  <div id="ownerSection">
+    <div class="div-row"><div class="div-line"></div><div class="div-lbl">Link Your WhatsApp</div><div class="div-line"></div></div>
+    <div class="card">
+      <div class="card-title">Generate Pairing Code</div>
+      <div class="card-sub">Enter your number with country code (digits only, no + or spaces). Open WhatsApp on your phone and enter the code when prompted.</div>
+      <div class="al al-ok"  id="oOk"></div>
+      <div class="al al-err" id="oErr"></div>
+      <div id="oForm">
+        <div class="fg">
+          <label>Your Phone Number</label>
+          <input type="tel" id="oPhone" placeholder="e.g. 2348012345678" autocomplete="off"/>
+        </div>
+        <button class="btn btn-gold" id="oBtn" onclick="ownerPair()">Generate Pairing Code</button>
+      </div>
+      <div class="code-box" id="oCode">
+        <div class="code-lbl">Pairing Code — valid for 60 seconds</div>
+        <div class="code-val" id="oCodeVal">--------</div>
+        <div class="code-hint">
+          WhatsApp &rarr; <b>Settings</b> &rarr; <b>Linked Devices</b><br>
+          &rarr; <b>Link a Device</b> &rarr; <b>Link with phone number instead</b><br>
+          &rarr; Enter the code above
+        </div>
+      </div>
+      <div class="al al-info" id="oPoll" style="display:none">Waiting for confirmation in WhatsApp…</div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: User pairing -->
+  <div class="div-row"><div class="div-line"></div><div class="div-lbl">Link a User's WhatsApp</div><div class="div-line"></div></div>
+  <div class="card">
+    <div class="card-title">Pair a User</div>
+    <div class="card-sub">Enter the user's number and days of access. A pairing code will be generated — share it with them so they can link their WhatsApp to the bot. The code appears within ~10 seconds.</div>
+    <div class="al al-ok"  id="uOk"></div>
+    <div class="al al-err" id="uErr"></div>
+    <div id="uForm">
+      <div class="row">
+        <div class="fg">
+          <label>User Phone Number</label>
+          <input type="tel" id="uPhone" placeholder="e.g. 2348099998888" autocomplete="off"/>
+        </div>
+        <div class="fg-sm">
+          <label>Days Access</label>
+          <input type="number" id="uDays" value="30" min="1" max="3650" placeholder="30"/>
+        </div>
+        <button class="btn btn-green" id="uBtn" onclick="userPair()" style="margin-bottom:0">Generate Code</button>
+      </div>
+    </div>
+    <div class="al al-info" id="uLoading" style="display:none">
+      <span class="spinner"></span>Generating pairing code, please wait…
+    </div>
+    <div class="code-box" id="uCode">
+      <div class="code-lbl">User Pairing Code — valid for 60 seconds</div>
+      <div class="code-val" id="uCodeVal">--------</div>
+      <div class="code-hint">
+        Tell the user: WhatsApp &rarr; <b>Settings</b> &rarr; <b>Linked Devices</b><br>
+        &rarr; <b>Link a Device</b> &rarr; <b>Link with phone number instead</b><br>
+        &rarr; Enter the code above
+      </div>
+    </div>
+    <div class="al al-info" id="uPoll" style="display:none"></div>
+  </div>
+
+  <!-- SECTION 3: User list -->
+  <div class="div-row"><div class="div-line"></div><div class="div-lbl">Authorised Users</div><div class="div-line"></div></div>
+  <div class="tbl-wrap">
+    <div class="tbl-hdr">
+      <h3>Users</h3>
+      <button class="btn btn-sm btn-ghost" onclick="loadUsers()">Refresh</button>
+    </div>
+    <div id="userBody">
+      <div class="empty"><div class="ico">👥</div><p>Loading…</p></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let ownerPollTimer = null;
+let userPollTimer  = null;
+let codePollTimer  = null;
+
+async function loadStatus() {
+  try {
+    const s   = await fetch('/panel/api/status').then(r => r.json());
+    const bar = document.getElementById('connBar');
+    const dot = document.getElementById('connPulse');
+    const num = document.getElementById('connNum');
+    const sub = document.getElementById('connSub');
+    const sec = document.getElementById('ownerSection');
+    if (s.connected) {
+      bar.className = 'conn-bar on'; dot.className = 'pulse';
+      num.textContent = s.adminNumber ? '+' + s.adminNumber : 'Connected';
+      sub.textContent = 'WhatsApp is linked and active';
+      sec.style.display = 'none';
+    } else {
+      bar.className = 'conn-bar off'; dot.className = 'pulse off';
+      num.textContent = 'Not Connected';
+      sub.textContent = 'Link your number below to activate the bot';
+      sec.style.display = 'block';
+    }
+  } catch {}
+}
+
+async function ownerPair() {
+  const phone = document.getElementById('oPhone').value.replace(/\D/g,'');
+  const btn   = document.getElementById('oBtn');
+  const ok    = document.getElementById('oOk');
+  const err   = document.getElementById('oErr');
+  ok.style.display = err.style.display = 'none';
+  if (!phone) { showAlert(err, 'Please enter your phone number.'); return; }
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    const d = await fetch('/panel/api/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    }).then(r => r.json());
+
+    if (d.success && d.alreadyConnected) {
+      showAlert(ok, 'Already connected!');
+      loadStatus();
+    } else if (d.success && d.code) {
+      document.getElementById('oCodeVal').textContent = d.code;
+      document.getElementById('oCode').style.display = 'block';
+      showAlert(ok, 'Code generated — enter it in WhatsApp within 60 seconds.');
+      startOwnerPoll();
+    } else {
+      showAlert(err, d.message || 'Failed to generate code.');
+    }
+  } catch { showAlert(err, 'Server error. Please try again.'); }
+  btn.disabled = false; btn.textContent = 'Generate Pairing Code';
+}
+
+function startOwnerPoll() {
+  const el = document.getElementById('oPoll');
+  showAlert(el, 'Waiting for you to enter the code in WhatsApp…', 'al al-info');
+  clearInterval(ownerPollTimer);
+  ownerPollTimer = setInterval(async () => {
+    try {
+      const d = await fetch('/panel/api/status').then(r => r.json());
+      if (d.connected) {
+        clearInterval(ownerPollTimer);
+        showAlert(el, 'Connected! ✅', 'al al-ok');
+        setTimeout(() => { loadStatus(); loadUsers(); }, 1500);
+      }
+    } catch {}
+  }, 3000);
+}
+
+async function userPair() {
+  const phone   = document.getElementById('uPhone').value.replace(/\D/g,'');
+  const days    = parseInt(document.getElementById('uDays').value) || 30;
+  const btn     = document.getElementById('uBtn');
+  const ok      = document.getElementById('uOk');
+  const err     = document.getElementById('uErr');
+  const loading = document.getElementById('uLoading');
+  const cb      = document.getElementById('uCode');
+  const poll    = document.getElementById('uPoll');
+
+  ok.style.display = err.style.display = 'none';
+  cb.style.display = poll.style.display = loading.style.display = 'none';
+  clearInterval(codePollTimer);
+  clearInterval(userPollTimer);
+
+  if (!phone) { showAlert(err, "Please enter the user's phone number."); return; }
+
+  btn.disabled = true; btn.textContent = 'Starting…';
+
+  try {
+    const d = await fetch('/panel/api/pair-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, days }),
+    }).then(r => r.json());
+
+    if (!d.success) {
+      showAlert(err, d.message || 'Failed to start pairing.');
+      btn.disabled = false; btn.textContent = 'Generate Code';
+      return;
+    }
+
+    loading.style.display = 'block';
+    btn.textContent = 'Generating…';
+    pollForCode(phone, days);
+
+  } catch {
+    showAlert(err, 'Server error. Please try again.');
+    btn.disabled = false; btn.textContent = 'Generate Code';
+  }
+}
+
+function pollForCode(phone, days) {
+  const ok      = document.getElementById('uOk');
+  const err     = document.getElementById('uErr');
+  const loading = document.getElementById('uLoading');
+  const cb      = document.getElementById('uCode');
+  const btn     = document.getElementById('uBtn');
+  let attempts  = 0;
+
+  clearInterval(codePollTimer);
+  codePollTimer = setInterval(async () => {
+    attempts++;
+
+    if (attempts > 22) {
+      clearInterval(codePollTimer);
+      loading.style.display = 'none';
+      showAlert(err, 'Timed out waiting for pairing code. Please try again.');
+      btn.disabled = false; btn.textContent = 'Generate Code';
+      return;
+    }
+
+    try {
+      const r = await fetch(`/panel/api/pairing-code/${phone}`).then(x => x.json());
+
+      if (r.pending) return;
+
+      clearInterval(codePollTimer);
+      loading.style.display = 'none';
+
+      if (r.alreadyConnected) {
+        showAlert(ok, `+${phone} is already linked!`);
+        loadUsers();
+        btn.disabled = false; btn.textContent = 'Generate Code';
+
+      } else if (r.success && r.code) {
+        document.getElementById('uCodeVal').textContent = r.code;
+        cb.style.display = 'block';
+        showAlert(ok, `Code for +${phone} ready — ${days}-day access pre-granted.`);
+        btn.disabled = false; btn.textContent = 'Generate Code';
+        loadUsers();
+        startUserPoll(phone);
+
+      } else {
+        showAlert(err, r.message || 'Failed to generate code. Please try again.');
+        btn.disabled = false; btn.textContent = 'Generate Code';
+      }
+    } catch {
+      clearInterval(codePollTimer);
+      loading.style.display = 'none';
+      showAlert(err, 'Server error while fetching code. Please try again.');
+      btn.disabled = false; btn.textContent = 'Generate Code';
+    }
+  }, 2000);
+}
+
+function startUserPoll(phone) {
+  const el = document.getElementById('uPoll');
+  showAlert(el, `Waiting for +${phone} to link their device…`, 'al al-info');
+  clearInterval(userPollTimer);
+  let attempts = 0;
+  userPollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const u   = await fetch('/panel/api/users').then(r => r.json());
+      const usr = (u.users || []).find(x => x.phone === phone && x.paired);
+      if (usr) {
+        clearInterval(userPollTimer);
+        showAlert(el, `✅ +${phone} linked successfully!`, 'al al-ok');
+        loadUsers();
+        loadStatus();
+        return;
+      }
+    } catch {}
+    if (attempts >= 40) {
+      clearInterval(userPollTimer);
+      showAlert(el, 'Pairing window expired. Ask the user to try again.', 'al al-err');
+    }
+  }, 3000);
+}
+
+async function removeUser(phone) {
+  if (!confirm('Remove access for +' + phone + '?')) return;
+  await fetch('/panel/api/users/remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  loadUsers();
+}
+
+async function toggleUser(phone, active) {
+  await fetch('/panel/api/users/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, active }),
+  });
+  loadUsers();
+}
+
+async function loadUsers() {
+  const body = document.getElementById('userBody');
+  try {
+    const { users } = await fetch('/panel/api/users').then(r => r.json());
+    if (!users || !users.length) {
+      body.innerHTML = '<div class="empty"><div class="ico">👥</div><p>No users yet.</p></div>';
+      return;
+    }
+    const now = Date.now();
+    let h = `<table><thead><tr>
+      <th>Phone</th><th>Expiry</th><th>Days Left</th><th>Status</th><th>Actions</th>
+    </tr></thead><tbody>`;
+    for (const u of users) {
+      const isExp  = now > u.expiry;
+      const dl     = Math.max(0, Math.ceil((u.expiry - now) / 86400000));
+      const exp    = new Date(u.expiry).toLocaleDateString('en-GB');
+      const badge  = !u.active
+        ? '<span class="badge b-off">Inactive</span>'
+        : isExp ? '<span class="badge b-ex">Expired</span>'
+                : '<span class="badge b-on">Active</span>';
+      const toggle = u.active
+        ? `<button class="btn btn-sm btn-ghost btn-ghost-yel" onclick="toggleUser('${u.phone}',false)">Disable</button>`
+        : `<button class="btn btn-sm btn-ghost btn-ghost-grn" onclick="toggleUser('${u.phone}',true)">Enable</button>`;
+      h += `<tr>
+        <td style="font-family:monospace;font-weight:600;color:var(--text)">+${u.phone}</td>
+        <td style="color:var(--muted)">${exp}</td>
+        <td style="font-weight:600;color:${dl < 4 && !isExp ? 'var(--red)' : 'var(--muted)'}">${isExp ? '—' : dl + 'd'}</td>
+        <td>${badge}</td>
+        <td><div style="display:flex;gap:7px;flex-wrap:wrap">
+          ${toggle}
+          <button class="btn btn-sm btn-ghost" style="border-color:rgba(217,95,95,.3);color:var(--red)" onclick="removeUser('${u.phone}')">Remove</button>
+        </div></td>
+      </tr>`;
+    }
+    h += '</tbody></table>';
+    body.innerHTML = h;
+  } catch {
+    body.innerHTML = '<div class="empty"><p>Failed to load users.</p></div>';
+  }
+}
+
+function showAlert(el, msg, cls) {
+  el.textContent = msg;
+  if (cls) el.className = cls;
+  el.style.display = 'block';
+}
+
+async function logout() {
+  await fetch('/panel/logout', { method: 'POST' });
+  window.location.href = '/panel';
+}
+
+loadStatus();
+loadUsers();
+setInterval(loadStatus, 6000);
+</script>
+</body>
+</html>
