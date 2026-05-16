@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Botify X — Panel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg: #0a0a1a;
+  --bg2: #0d0d22;
+  --card: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --card-hover: rgba(255,255,255,0.06);
+  --purple: #7c3aed;
+  --purple2: #9d5bf0;
+  --purple-glow: rgba(124,58,237,0.35);
+  --green: #22c55e;
+  --green-dim: rgba(34,197,94,0.15);
+  --green-border: rgba(34,197,94,0.3);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.12);
+  --red-border: rgba(239,68,68,0.3);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.12);
+  --text: #e8e8f0;
+  --text2: #a0a0c0;
+  --text3: #606080;
+  --radius: 16px;
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(76,29,149,0.12) 0%, transparent 50%);
+}
+
+/* ── HEADER ── */
+.hdr{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 28px;
+  background:rgba(10,10,26,0.85);
+  border-bottom:1px solid var(--card-border);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-icon{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--purple),#5b21b6);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;
+  box-shadow:0 4px 16px var(--purple-glow);
+}
+.hdr-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:0.3px}
+.hdr-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.uptime-badge{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:20px;
+  font-size:12px;color:var(--text2);
+}
+.uptime-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sign-out-btn{
+  padding:7px 16px;
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:8px;
+  color:var(--text2);
+  font-size:12.5px;font-weight:500;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+  transition:all .2s;
+}
+.sign-out-btn:hover{border-color:var(--red-border);color:var(--red);background:var(--red-dim)}
+
+/* ── MAIN LAYOUT ── */
+.page{max-width:860px;margin:0 auto;padding:32px 20px 80px}
+
+/* ── STATS GRID ── */
+.stats-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:16px;
+}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  transition:border-color .2s;
+}
+.stat-card:hover{border-color:rgba(255,255,255,0.13)}
+.stat-label{
+  font-size:10px;font-weight:600;
+  letter-spacing:0.8px;text-transform:uppercase;
+  color:var(--text3);margin-bottom:12px;
+}
+.stat-value{
+  display:flex;align-items:center;gap:9px;
+  font-size:22px;font-weight:700;color:var(--text);
+}
+.status-dot{
+  width:11px;height:11px;border-radius:50%;flex-shrink:0;
+}
+.status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+.status-dot.offline{background:var(--red)}
+.stat-value .split{font-size:22px;font-weight:400;color:var(--text3);margin:0 2px}
+.stat-value .part-red{color:var(--red)}
+.stat-value .part-amber{color:var(--amber)}
+
+/* ── CONNECTION STATUS BAR ── */
+.conn-bar{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 22px;
+  border-radius:var(--radius);
+  border:1px solid;
+  margin-bottom:20px;
+  transition:all .3s;
+}
+.conn-bar.connected{
+  background:rgba(34,197,94,0.06);
+  border-color:rgba(34,197,94,0.25);
+}
+.conn-bar.disconnected{
+  background:var(--red-dim);
+  border-color:var(--red-border);
+}
+.conn-pulse{
+  width:12px;height:12px;border-radius:50%;flex-shrink:0;
+}
+.conn-pulse.on{background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite}
+.conn-pulse.off{background:var(--red)}
+.conn-info{flex:1}
+.conn-section-label{
+  font-size:10px;font-weight:600;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text3);margin-bottom:3px;
+}
+.conn-title{font-size:20px;font-weight:700;color:var(--text)}
+.conn-sub{font-size:12px;color:var(--text3);margin-top:3px}
+
+/* ── SECTION DIVIDER ── */
+.section-divider{
+  display:flex;align-items:center;gap:14px;
+  margin:28px 0 20px;
+}
+.div-line{flex:1;height:1px;background:var(--card-border)}
+.div-label{
+  font-size:11px;font-weight:600;color:var(--purple2);
+  letter-spacing:0.5px;white-space:nowrap;
+  padding:4px 14px;
+  background:rgba(124,58,237,0.1);
+  border:1px solid rgba(124,58,237,0.25);
+  border-radius:20px;
+}
+
+/* ── CARD ── */
+.card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:24px;
+  margin-bottom:16px;
+}
+.card-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+.card-sub{font-size:13px;color:var(--text3);line-height:1.65;margin-bottom:20px}
+
+/* ── METHOD TABS ── */
+.method-tabs{
+  display:flex;gap:8px;margin-bottom:22px;
+}
+.mtab{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 18px;
+  border-radius:10px;
+  border:1.5px solid var(--card-border);
+  background:transparent;
+  color:var(--text3);
+  font-size:13px;font-weight:500;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+  transition:all .2s;
+}
+.mtab:hover{border-color:rgba(124,58,237,0.4);color:var(--text2)}
+.mtab.active{
+  background:rgba(124,58,237,0.15);
+  border-color:rgba(124,58,237,0.5);
+  color:#c4b5fd;
+}
+.mtab-icon{font-size:15px}
+
+/* ── FORM ── */
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-size:11px;font-weight:600;
+  letter-spacing:0.6px;text-transform:uppercase;
+  color:var(--text3);margin-bottom:7px;
+}
+input[type=tel],input[type=number]{
+  width:100%;
+  background:rgba(0,0,0,0.3);
+  border:1.5px solid var(--card-border);
+  border-radius:10px;
+  padding:11px 14px;
+  font-size:14px;color:var(--text);
+  font-family:'Inter',sans-serif;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+input[type=tel]:focus,input[type=number]:focus{
+  border-color:rgba(124,58,237,0.6);
+  box-shadow:0 0 0 3px rgba(124,58,237,0.12);
+}
+input::placeholder{color:var(--text3)}
+.row{display:flex;gap:12px;align-items:flex-end}
+.row .field{flex:1;margin-bottom:0}
+.row .field-sm{width:110px;flex-shrink:0;margin-bottom:0}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 22px;
+  border:none;border-radius:10px;
+  font-size:13.5px;font-weight:600;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+  transition:opacity .2s,transform .1s;
+  white-space:nowrap;
+}
+.btn:hover:not(:disabled){opacity:.87}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{
+  background:linear-gradient(135deg,var(--purple),#5b21b6);
+  color:#fff;width:100%;
+  box-shadow:0 4px 20px rgba(124,58,237,0.25);
+}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:8px}
+.btn-ghost{
+  background:var(--card);border:1px solid var(--card-border);
+  color:var(--text3);
+}
+.btn-ghost:hover:not(:disabled){border-color:rgba(124,58,237,0.4);color:var(--text2)}
+.btn-danger{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red)}
+.btn-success{background:var(--green-dim);border:1px solid var(--green-border);color:var(--green)}
+
+/* ── CODE BOX ── */
+.code-box{
+  background:rgba(0,0,0,0.35);
+  border:2px dashed rgba(124,58,237,0.5);
+  border-radius:14px;padding:24px;
+  text-align:center;
+  display:none;margin:16px 0;
+}
+.code-label{
+  font-size:10px;font-weight:600;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text3);margin-bottom:10px;
+}
+.code-value{
+  font-size:36px;font-weight:800;
+  letter-spacing:10px;color:#c4b5fd;
+  font-family:'Courier New',monospace;
+  text-shadow:0 0 20px rgba(196,181,253,0.3);
+}
+.code-hint{
+  margin-top:12px;font-size:11.5px;color:var(--text3);line-height:1.8;
+}
+.code-hint b{color:var(--text2)}
+
+/* ── QR BOX ── */
+.qr-box{
+  display:none;
+  background:rgba(0,0,0,0.35);
+  border:1px solid var(--card-border);
+  border-radius:14px;
+  padding:24px;
+  text-align:center;
+  margin:16px 0;
+}
+.qr-box.active{display:block}
+.qr-canvas-wrap{
+  display:inline-block;
+  padding:14px;
+  background:#fff;
+  border-radius:10px;
+  margin:0 auto 14px;
+  line-height:0;
+}
+#ownerQRCanvas,#userQRCanvas{display:block}
+.qr-hint{font-size:12px;color:var(--text3);line-height:1.7;margin-top:4px}
+.qr-hint b{color:var(--text2)}
+.qr-status{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:12px;color:var(--text3);margin-bottom:10px;
+}
+.qr-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--amber);animation:pulse 1.5s infinite;
+}
+.qr-dot.ready{background:var(--green);animation:none}
+.qr-placeholder{
+  width:200px;height:200px;
+  background:rgba(255,255,255,0.03);
+  border:2px dashed var(--card-border);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;
+  color:var(--text3);font-size:12px;
+  margin:0 auto 14px;
+}
+.qr-spinner{
+  width:24px;height:24px;
+  border:2px solid rgba(124,58,237,0.2);
+  border-top-color:var(--purple2);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ALERTS ── */
+.alert{
+  display:none;
+  padding:11px 14px;
+  border-radius:9px;
+  font-size:12.5px;
+  line-height:1.55;
+  margin:10px 0;
+}
+.alert-ok{background:rgba(34,197,94,0.08);border:1px solid var(--green-border);color:#4ade80}
+.alert-err{background:var(--red-dim);border:1px solid var(--red-border);color:#f87171}
+.alert-info{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);color:#c4b5fd}
+.spinner-inline{
+  display:inline-block;width:11px;height:11px;
+  border:2px solid rgba(196,181,253,0.25);border-top-color:#c4b5fd;
+  border-radius:50%;animation:spin .7s linear infinite;
+  margin-right:6px;vertical-align:middle;
+}
+
+/* ── USER TABLE ── */
+.table-wrap{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.table-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:1px solid var(--card-border);
+}
+.table-header h3{font-size:14px;font-weight:600;color:var(--text)}
+table{width:100%;border-collapse:collapse}
+thead th{
+  background:rgba(0,0,0,0.2);
+  padding:10px 16px;text-align:left;
+  font-size:10px;font-weight:700;letter-spacing:0.7px;
+  text-transform:uppercase;color:var(--text3);
+}
+tbody td{
+  padding:12px 16px;font-size:13px;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(124,58,237,0.03)}
+.badge{
+  display:inline-block;padding:3px 9px;
+  border-radius:20px;font-size:10.5px;font-weight:600;
+}
+.badge-active{background:var(--green-dim);border:1px solid var(--green-border);color:#4ade80}
+.badge-expired{background:var(--red-dim);border:1px solid var(--red-border);color:#f87171}
+.badge-inactive{background:rgba(160,160,192,0.08);border:1px solid rgba(160,160,192,0.15);color:var(--text3)}
+.table-empty{
+  text-align:center;padding:52px 20px;color:var(--text3);
+}
+.table-empty .empty-icon{font-size:36px;opacity:.3;margin-bottom:10px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .hdr{padding:12px 16px}
+  .hdr-right .uptime-badge{display:none}
+  .page{padding:20px 14px 60px}
+  .card{padding:18px 16px}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-value{font-size:18px}
+  .row{flex-direction:column}
+  .row .field-sm{width:100%}
+  thead th:nth-child(2),tbody td:nth-child(2),
+  thead th:nth-child(3),tbody td:nth-child(3){display:none}
+}
+</style>
+<!-- QR code library from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-icon">&#x1F916;</div>
+    <div>
+      <div class="hdr-name">BOTIFY X</div>
+      <div class="hdr-meta">v1.1.4 &nbsp;&middot;&nbsp; Panel</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="uptime-badge">
+      <span class="uptime-dot"></span>
+      Uptime <span id="uptimeDisplay">00:00:00</span>
+    </div>
+    <button class="sign-out-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- STATS GRID -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Bot Status</div>
+      <div class="stat-value">
+        <span class="status-dot offline" id="botStatusDot"></span>
+        <span id="botStatusText">Offline</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Admin Number</div>
+      <div class="stat-value" id="adminNumberVal" style="font-size:15px;word-break:break-all">Not set</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Users</div>
+      <div class="stat-value" style="color:#4ade80" id="activeUsersVal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Expired / Pending</div>
+      <div class="stat-value">
+        <span class="part-red" id="expiredUsersVal">0</span>
+        <span class="split">/</span>
+        <span class="part-amber" id="pendingUsersVal">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHATSAPP OWNER CONNECTION STATUS -->
+  <div class="conn-bar disconnected" id="connBar">
+    <div class="conn-pulse off" id="connPulse"></div>
+    <div class="conn-info">
+      <div class="conn-section-label">WhatsApp Owner Connection</div>
+      <div class="conn-title" id="connTitle">Not Connected</div>
+      <div class="conn-sub" id="connSub">Link your owner number below to activate the bot</div>
+    </div>
+  </div>
+
+  <!-- CONNECT BOT OWNER SECTION -->
+  <div id="ownerSection">
+    <div class="section-divider">
+      <div class="div-line"></div>
+      <div class="div-label">&#x26A1; Connect Bot Owner</div>
+      <div class="div-line"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Link Owner WhatsApp</div>
+      <div class="card-sub">Choose how to connect: enter your phone number and get a pairing code, or scan a QR code directly with WhatsApp.</div>
+
+      <!-- Method tabs -->
+      <div class="method-tabs">
+        <button class="mtab active" id="ownerTabCode" onclick="switchOwnerTab('code')">
+          <span class="mtab-icon">&#x1F4F1;</span> Phone + Code
+        </button>
+        <button class="mtab" id="ownerTabQR" onclick="switchOwnerTab('qr')">
+          <span class="mtab-icon">&#x1F4F7;</span> QR Code
+        </button>
+      </div>
+
+      <!-- Phone+Code tab -->
+      <div id="ownerCodeTab">
+        <div class="alert alert-ok"  id="oOk"></div>
+        <div class="alert alert-err" id="oErr"></div>
+        <div class="field">
+          <label>Your Phone Number (Country Code + Digits)</label>
+          <input type="tel" id="oPhone" placeholder="e.g. 2349012345678" autocomplete="off"/>
+        </div>
+        <button class="btn btn-primary" id="oBtn" onclick="ownerPairCode()">Generate Pairing Code</button>
+        <div class="code-box" id="oCode">
+          <div class="code-label">Pairing Code &mdash; valid for 60 seconds</div>
+          <div class="code-value" id="oCodeVal">--------</div>
+          <div class="code-hint">
+            WhatsApp &rarr; <b>Settings</b> &rarr; <b>Linked Devices</b><br>
+            &rarr; <b>Link a Device</b> &rarr; <b>Link with phone number instead</b><br>
+            &rarr; Enter the code above
+          </div>
+        </div>
+        <div class="alert alert-info" id="oPoll"></div>
+      </div>
+
+      <!-- QR tab -->
+      <div id="ownerQRTab" style="display:none">
+        <div class="alert alert-ok"  id="oQROk"></div>
+        <div class="alert alert-err" id="oQRErr"></div>
+        <div class="qr-box" id="ownerQRBox">
+          <div class="qr-status">
+            <span class="qr-dot" id="ownerQRDot"></span>
+            <span id="ownerQRStatus">Waiting for QR code...</span>
+          </div>
+          <div class="qr-canvas-wrap">
+            <div id="ownerQRCanvas">
+              <div class="qr-placeholder">
+                <div class="qr-spinner" id="ownerQRSpinner"></div>
+                <span>Loading QR...</span>
+              </div>
+            </div>
+          </div>
+          <div class="qr-hint">
+            Open <b>WhatsApp</b> &rarr; <b>Settings</b> &rarr; <b>Linked Devices</b><br>
+            &rarr; <b>Link a Device</b> &rarr; scan the QR code above
+          </div>
+        </div>
+        <button class="btn btn-primary" id="oQRBtn" onclick="ownerStartQR()">Show QR Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER MANAGEMENT -->
+  <div class="section-divider">
+    <div class="div-line"></div>
+    <div class="div-label">Users Management</div>
+    <div class="div-line"></div>
+  </div>
+
+  <!-- Add / Link User -->
+  <div class="card">
+    <div class="card-title">Link a User's WhatsApp</div>
+    <div class="card-sub">Grant a user access and generate their pairing credentials. The code or QR appears within ~10 seconds.</div>
+
+    <!-- Method tabs -->
+    <div class="method-tabs">
+      <button class="mtab active" id="userTabCode" onclick="switchUserTab('code')">
+        <span class="mtab-icon">&#x1F4F1;</span> Phone + Code
+      </button>
+      <button class="mtab" id="userTabQR" onclick="switchUserTab('qr')">
+        <span class="mtab-icon">&#x1F4F7;</span> QR Code
+      </button>
+    </div>
+
+    <!-- User Phone+Code tab -->
+    <div id="userCodeTab">
+      <div class="alert alert-ok"  id="uOk"></div>
+      <div class="alert alert-err" id="uErr"></div>
+      <div class="row">
+        <div class="field">
+          <label>User Phone Number</label>
+          <input type="tel" id="uPhone" placeholder="e.g. 2348099998888" autocomplete="off"/>
+        </div>
+        <div class="field-sm">
+          <label>Days Access</label>
+          <input type="number" id="uDays" value="30" min="1" max="3650"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="uBtn" onclick="userPairCode()" style="margin-top:4px">Generate Code</button>
+      <div class="alert alert-info" id="uLoading" style="display:none">
+        <span class="spinner-inline"></span>Generating pairing code, please wait...
+      </div>
+      <div class="code-box" id="uCode">
+        <div class="code-label">User Pairing Code &mdash; valid for 60 seconds</div>
+        <div class="code-value" id="uCodeVal">--------</div>
+        <div class="code-hint">
+          Tell the user: WhatsApp &rarr; <b>Settings</b> &rarr; <b>Linked Devices</b><br>
+          &rarr; <b>Link a Device</b> &rarr; <b>Link with phone number instead</b><br>
+          &rarr; Enter the code above
+        </div>
+      </div>
+      <div class="alert alert-info" id="uPoll"></div>
+    </div>
+
+    <!-- User QR tab -->
+    <div id="userQRTab" style="display:none">
+      <div class="alert alert-ok"  id="uQROk"></div>
+      <div class="alert alert-err" id="uQRErr"></div>
+      <div class="row" style="margin-bottom:14px">
+        <div class="field">
+          <label>User Phone Number</label>
+          <input type="tel" id="uQRPhone" placeholder="e.g. 2348099998888" autocomplete="off"/>
+        </div>
+        <div class="field-sm">
+          <label>Days Access</label>
+          <input type="number" id="uQRDays" value="30" min="1" max="3650"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="uQRBtn" onclick="userStartQR()" style="margin-bottom:12px">Generate QR Code</button>
+      <div class="qr-box" id="userQRBox">
+        <div class="qr-status">
+          <span class="qr-dot" id="userQRDot"></span>
+          <span id="userQRStatus">Waiting for QR code...</span>
+        </div>
+        <div class="qr-canvas-wrap">
+          <div id="userQRCanvas">
+            <div class="qr-placeholder">
+              <div class="qr-spinner"></div>
+              <span>Loading QR...</span>
+            </div>
+          </div>
+        </div>
+        <div class="qr-hint">
+          Tell user: <b>WhatsApp</b> &rarr; <b>Settings</b> &rarr; <b>Linked Devices</b><br>
+          &rarr; <b>Link a Device</b> &rarr; scan the QR above
+        </div>
+      </div>
+      <div class="alert alert-info" id="uQRPoll"></div>
+    </div>
+  </div>
+
+  <!-- User List -->
+  <div class="section-divider">
+    <div class="div-line"></div>
+    <div class="div-label">Authorised Users</div>
+    <div class="div-line"></div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h3>Users</h3>
+      <button class="btn btn-sm btn-ghost" onclick="loadUsers()">Refresh</button>
+    </div>
+    <div id="userBody">
+      <div class="table-empty"><div class="empty-icon">&#x1F465;</div><p>Loading...</p></div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let ownerPollTimer  = null;
+let ownerQRTimer    = null;
+let userPollTimer   = null;
+let userQRTimer     = null;
+let codePollTimer   = null;
+let uptimeTimer     = null;
+let uptimeInitialized = false;
+
+let ownerQRInstance = null;
+let userQRInstance  = null;
+let lastOwnerQR     = '';
+let lastUserQR      = '';
+let userQRPhone     = '';
+
+// ── Uptime counter ───────────────────────────────────────────────────────────
+function fmtUptime(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return [h, m, sec].map(x => String(x).padStart(2, '0')).join(':');
+}
+
+function startUptimeTick(serverUptimeMs) {
+  // Only initialize once to avoid clock drift from repeated loadStatus calls
+  if (uptimeInitialized) return;
+  uptimeInitialized = true;
+  const clientStart = Date.now() - serverUptimeMs;
+  clearInterval(uptimeTimer);
+  uptimeTimer = setInterval(() => {
+    document.getElementById('uptimeDisplay').textContent = fmtUptime(Date.now() - clientStart);
+  }, 1000);
+}
+
+// ── Status + stats polling ───────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const [s, stats] = await Promise.all([
+      fetch('/panel/api/status').then(r => r.json()),
+      fetch('/panel/api/stats').then(r => r.json()),
+    ]);
+
+    const bar   = document.getElementById('connBar');
+    const dot   = document.getElementById('connPulse');
+    const title = document.getElementById('connTitle');
+    const sub   = document.getElementById('connSub');
+    const sec   = document.getElementById('ownerSection');
+
+    const botDot  = document.getElementById('botStatusDot');
+    const botText = document.getElementById('botStatusText');
+
+    if (s.connected) {
+      bar.className  = 'conn-bar connected';
+      dot.className  = 'conn-pulse on';
+      title.textContent = s.adminNumber ? '+' + s.adminNumber : 'Connected';
+      sub.textContent   = 'WhatsApp is linked and active';
+      sec.style.display = 'none';
+      botDot.className  = 'status-dot online';
+      botText.textContent = 'Online';
+    } else {
+      bar.className  = 'conn-bar disconnected';
+      dot.className  = 'conn-pulse off';
+      title.textContent = 'Not Connected';
+      sub.textContent   = 'Link your owner number below to activate the bot';
+      sec.style.display = 'block';
+      botDot.className  = 'status-dot offline';
+      botText.textContent = 'Offline';
+    }
+
+    document.getElementById('adminNumberVal').textContent = s.adminNumber ? '+' + s.adminNumber : 'Not set';
+    document.getElementById('activeUsersVal').textContent  = stats.active  || 0;
+    document.getElementById('expiredUsersVal').textContent = stats.expired || 0;
+    document.getElementById('pendingUsersVal').textContent = stats.pending || 0;
+
+    if (s.uptimeMs && s.uptimeMs > 0) startUptimeTick(s.uptimeMs);
+  } catch {}
+}
+
+// ── Tab switchers ─────────────────────────────────────────────────────────────
+function switchOwnerTab(mode) {
+  document.getElementById('ownerTabCode').classList.toggle('active', mode === 'code');
+  document.getElementById('ownerTabQR').classList.toggle('active',   mode === 'qr');
+  document.getElementById('ownerCodeTab').style.display = mode === 'code' ? 'block' : 'none';
+  document.getElementById('ownerQRTab').style.display   = mode === 'qr'   ? 'block' : 'none';
+  if (mode !== 'qr') stopOwnerQRPolling();
+}
+
+function switchUserTab(mode) {
+  document.getElementById('userTabCode').classList.toggle('active', mode === 'code');
+  document.getElementById('userTabQR').classList.toggle('active',   mode === 'qr');
+  document.getElementById('userCodeTab').style.display = mode === 'code' ? 'block' : 'none';
+  document.getElementById('userQRTab').style.display   = mode === 'qr'   ? 'block' : 'none';
+  if (mode !== 'qr') stopUserQRPolling();
+}
+
+// ── Alert helper ─────────────────────────────────────────────────────────────
+function showAlert(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideAlert(el) { el.style.display = 'none'; }
+
+// ── QR renderer ──────────────────────────────────────────────────────────────
+function renderQR(containerId, qrString, instanceRef) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  const size = Math.min(220, window.innerWidth - 100);
+  const qr = new QRCode(container, {
+    text: qrString,
+    width: size, height: size,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L,
+  });
+  return qr;
+}
+
+// ════════════════════════════════════════════════════════════════
+// OWNER — PHONE + CODE
+// ════════════════════════════════════════════════════════════════
+async function ownerPairCode() {
+  const phone = document.getElementById('oPhone').value.replace(/\D/g, '');
+  const btn   = document.getElementById('oBtn');
+  const ok    = document.getElementById('oOk');
+  const err   = document.getElementById('oErr');
+  hideAlert(ok); hideAlert(err);
+  if (!phone) { showAlert(err, 'Please enter your phone number.'); return; }
+  btn.disabled = true; btn.textContent = 'Generating...';
+  try {
+    const d = await fetch('/panel/api/pair', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    }).then(r => r.json());
+    if (d.success && d.alreadyConnected) {
+      showAlert(ok, 'Already connected!');
+      loadStatus();
+    } else if (d.success && d.code) {
+      document.getElementById('oCodeVal').textContent = d.code;
+      document.getElementById('oCode').style.display = 'block';
+      showAlert(ok, 'Code generated — enter it in WhatsApp within 60 seconds.');
+      startOwnerCodePoll();
+    } else {
+      showAlert(err, d.message || 'Failed to generate code.');
+    }
+  } catch { showAlert(err, 'Server error. Please try again.'); }
+  btn.disabled = false; btn.textContent = 'Generate Pairing Code';
+}
+
+function startOwnerCodePoll() {
+  const el = document.getElementById('oPoll');
+  showAlert(el, 'Waiting for you to enter the code in WhatsApp...');
+  clearInterval(ownerPollTimer);
+  ownerPollTimer = setInterval(async () => {
+    try {
+      const d = await fetch('/panel/api/status').then(r => r.json());
+      if (d.connected) {
+        clearInterval(ownerPollTimer);
+        document.getElementById('oCode').style.display = 'none';
+        showAlert(el, 'Connected successfully!');
+        setTimeout(() => loadStatus(), 1000);
+      }
+    } catch {}
+  }, 3000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// OWNER — QR CODE
+// ════════════════════════════════════════════════════════════════
+async function ownerStartQR() {
+  const btn = document.getElementById('oQRBtn');
+  const ok  = document.getElementById('oQROk');
+  const err = document.getElementById('oQRErr');
+  hideAlert(ok); hideAlert(err);
+  btn.disabled = true; btn.textContent = 'Starting...';
+
+  try {
+    const d = await fetch('/panel/api/qr/owner/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    }).then(r => r.json());
+
+    if (!d.success) {
+      showAlert(err, d.message || 'Failed to start QR session.');
+      btn.disabled = false; btn.textContent = 'Show QR Code';
+      return;
+    }
+    if (d.alreadyConnected) {
+      showAlert(ok, 'Already connected!');
+      loadStatus();
+      btn.disabled = false; btn.textContent = 'Show QR Code';
+      return;
+    }
+
+    // Show QR box and start polling
+    const qrBox = document.getElementById('ownerQRBox');
+    qrBox.classList.add('active');
+    btn.textContent = 'Refreshing QR...';
+    pollOwnerQR();
+  } catch {
+    showAlert(err, 'Server error. Please try again.');
+    btn.disabled = false; btn.textContent = 'Show QR Code';
+  }
+}
+
+function pollOwnerQR() {
+  stopOwnerQRPolling();
+  ownerQRTimer = setInterval(async () => {
+    try {
+      const d = await fetch('/panel/api/qr/owner').then(r => r.json());
+
+      if (d.connected) {
+        stopOwnerQRPolling();
+        document.getElementById('ownerQRBox').classList.remove('active');
+        showAlert(document.getElementById('oQROk'), 'Connected successfully!');
+        document.getElementById('oQRBtn').disabled = false;
+        document.getElementById('oQRBtn').textContent = 'Show QR Code';
+        document.getElementById('ownerQRDot').className = 'qr-dot ready';
+        document.getElementById('ownerQRStatus').textContent = 'Connected!';
+        setTimeout(() => loadStatus(), 1000);
+        return;
+      }
+
+      if (d.qr && d.qr !== lastOwnerQR) {
+        lastOwnerQR = d.qr;
+        ownerQRInstance = renderQR('ownerQRCanvas', d.qr, ownerQRInstance);
+        document.getElementById('ownerQRDot').className = 'qr-dot ready';
+        document.getElementById('ownerQRStatus').textContent = 'QR ready — scan now';
+      }
+    } catch {}
+  }, 2000);
+}
+
+function stopOwnerQRPolling() {
+  if (ownerQRTimer) { clearInterval(ownerQRTimer); ownerQRTimer = null; }
+  lastOwnerQR = '';
+}
+
+// ════════════════════════════════════════════════════════════════
+// USER — PHONE + CODE
+// ════════════════════════════════════════════════════════════════
+async function userPairCode() {
+  const phone   = document.getElementById('uPhone').value.replace(/\D/g, '');
+  const days    = parseInt(document.getElementById('uDays').value) || 30;
+  const btn     = document.getElementById('uBtn');
+  const ok      = document.getElementById('uOk');
+  const err     = document.getElementById('uErr');
+  const loading = document.getElementById('uLoading');
+  const cb      = document.getElementById('uCode');
+  const poll    = document.getElementById('uPoll');
+
+  hideAlert(ok); hideAlert(err);
+  cb.style.display = loading.style.display = 'none';
+  hideAlert(poll);
+  clearInterval(codePollTimer); clearInterval(userPollTimer);
+
+  if (!phone) { showAlert(err, "Please enter the user's phone number."); return; }
+  btn.disabled = true; btn.textContent = 'Starting...';
+
+  try {
+    const d = await fetch('/panel/api/pair-user', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, days }),
+    }).then(r => r.json());
+
+    if (!d.success) {
+      showAlert(err, d.message || 'Failed to start pairing.');
+      btn.disabled = false; btn.textContent = 'Generate Code';
+      return;
+    }
+    loading.style.display = 'block';
+    btn.textContent = 'Generating...';
+    pollForUserCode(phone, days);
+  } catch {
+    showAlert(err, 'Server error. Please try again.');
+    btn.disabled = false; btn.textContent = 'Generate Code';
+  }
+}
+
+function pollForUserCode(phone, days) {
+  const ok      = document.getElementById('uOk');
+  const err     = document.getElementById('uErr');
+  const loading = document.getElementById('uLoading');
+  const cb      = document.getElementById('uCode');
+  const btn     = document.getElementById('uBtn');
+  let attempts  = 0;
+  clearInterval(codePollTimer);
+  codePollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > 22) {
+      clearInterval(codePollTimer);
+      loading.style.display = 'none';
+      showAlert(err, 'Timed out. Please try again.');
+      btn.disabled = false; btn.textContent = 'Generate Code';
+      return;
+    }
+    try {
+      const r = await fetch(`/panel/api/pairing-code/${phone}`).then(x => x.json());
+      if (r.pending) return;
+      clearInterval(codePollTimer);
+      loading.style.display = 'none';
+      if (r.alreadyConnected) {
+        showAlert(ok, `+${phone} is already linked!`);
+        loadUsers(); loadStatus();
+        btn.disabled = false; btn.textContent = 'Generate Code';
+      } else if (r.success && r.code) {
+        document.getElementById('uCodeVal').textContent = r.code;
+        cb.style.display = 'block';
+        showAlert(ok, `Code for +${phone} ready — ${days}-day access granted.`);
+        btn.disabled = false; btn.textContent = 'Generate Code';
+        loadUsers();
+        startUserCodePoll(phone);
+      } else {
+        showAlert(err, r.message || 'Failed to generate code. Please try again.');
+        btn.disabled = false; btn.textContent = 'Generate Code';
+      }
+    } catch {
+      clearInterval(codePollTimer);
+      loading.style.display = 'none';
+      showAlert(err, 'Server error while fetching code. Please try again.');
+      btn.disabled = false; btn.textContent = 'Generate Code';
+    }
+  }, 2000);
+}
+
+function startUserCodePoll(phone) {
+  const el = document.getElementById('uPoll');
+  showAlert(el, `Waiting for +${phone} to link their device...`);
+  clearInterval(userPollTimer);
+  let attempts = 0;
+  userPollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const u = await fetch('/panel/api/users').then(r => r.json());
+      const usr = (u.users || []).find(x => x.phone === phone && x.paired);
+      if (usr) {
+        clearInterval(userPollTimer);
+        document.getElementById('uCode').style.display = 'none';
+        showAlert(el, `+${phone} linked successfully!`);
+        loadUsers(); loadStatus();
+        return;
+      }
+    } catch {}
+    if (attempts >= 40) {
+      clearInterval(userPollTimer);
+      el.className = 'alert alert-err';
+      showAlert(el, 'Pairing window expired. Ask the user to try again.');
+    }
+  }, 3000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// USER — QR CODE
+// ════════════════════════════════════════════════════════════════
+async function userStartQR() {
+  const phone = document.getElementById('uQRPhone').value.replace(/\D/g, '');
+  const days  = parseInt(document.getElementById('uQRDays').value) || 30;
+  const btn   = document.getElementById('uQRBtn');
+  const ok    = document.getElementById('uQROk');
+  const err   = document.getElementById('uQRErr');
+  hideAlert(ok); hideAlert(err);
+  stopUserQRPolling();
+
+  if (!phone) { showAlert(err, "Please enter the user's phone number."); return; }
+  btn.disabled = true; btn.textContent = 'Starting...';
+
+  try {
+    const d = await fetch('/panel/api/qr/user/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, days }),
+    }).then(r => r.json());
+
+    if (!d.success) {
+      showAlert(err, d.message || 'Failed to start QR session.');
+      btn.disabled = false; btn.textContent = 'Generate QR Code';
+      return;
+    }
+
+    userQRPhone = phone;
+    const qrBox = document.getElementById('userQRBox');
+    qrBox.classList.add('active');
+    btn.textContent = 'Refreshing QR...';
+    pollUserQR(phone, days);
+  } catch {
+    showAlert(err, 'Server error. Please try again.');
+    btn.disabled = false; btn.textContent = 'Generate QR Code';
+  }
+}
+
+function pollUserQR(phone, days) {
+  stopUserQRPolling();
+  userQRTimer = setInterval(async () => {
+    try {
+      const d = await fetch(`/panel/api/qr/user/${phone}`).then(r => r.json());
+
+      if (d.connected) {
+        stopUserQRPolling();
+        document.getElementById('userQRBox').classList.remove('active');
+        showAlert(document.getElementById('uQROk'), `+${phone} connected successfully!`);
+        document.getElementById('uQRBtn').disabled = false;
+        document.getElementById('uQRBtn').textContent = 'Generate QR Code';
+        document.getElementById('userQRDot').className = 'qr-dot ready';
+        document.getElementById('userQRStatus').textContent = 'Connected!';
+        loadUsers(); loadStatus();
+        return;
+      }
+
+      if (d.qr && d.qr !== lastUserQR) {
+        lastUserQR = d.qr;
+        userQRInstance = renderQR('userQRCanvas', d.qr, userQRInstance);
+        document.getElementById('userQRDot').className = 'qr-dot ready';
+        document.getElementById('userQRStatus').textContent = 'QR ready — share with user to scan';
+      }
+    } catch {}
+  }, 2000);
+}
+
+function stopUserQRPolling() {
+  if (userQRTimer) { clearInterval(userQRTimer); userQRTimer = null; }
+  lastUserQR = '';
+}
+
+// ── User table ────────────────────────────────────────────────────────────────
+async function removeUser(phone) {
+  if (!confirm('Remove access for +' + phone + '?')) return;
+  await fetch('/panel/api/users/remove', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  loadUsers(); loadStatus();
+}
+
+async function toggleUser(phone, active) {
+  await fetch('/panel/api/users/toggle', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, active }),
+  });
+  loadUsers(); loadStatus();
+}
+
+async function loadUsers() {
+  const body = document.getElementById('userBody');
+  try {
+    const { users } = await fetch('/panel/api/users').then(r => r.json());
+    if (!users || !users.length) {
+      body.innerHTML = '<div class="table-empty"><div class="empty-icon">&#x1F465;</div><p>No users yet.</p></div>';
+      return;
+    }
+    const now = Date.now();
+    let h = `<table><thead><tr>
+      <th>Phone</th><th>Expiry</th><th>Days Left</th><th>Status</th><th>Actions</th>
+    </tr></thead><tbody>`;
+    for (const u of users) {
+      const isExp = now > u.expiry;
+      const dl    = Math.max(0, Math.ceil((u.expiry - now) / 86400000));
+      const exp   = new Date(u.expiry).toLocaleDateString('en-GB');
+      const badge = !u.active
+        ? '<span class="badge badge-inactive">Inactive</span>'
+        : isExp ? '<span class="badge badge-expired">Expired</span>'
+                : '<span class="badge badge-active">Active</span>';
+      const toggle = u.active
+        ? `<button class="btn btn-sm btn-ghost" onclick="toggleUser('${u.phone}',false)">Disable</button>`
+        : `<button class="btn btn-sm btn-success" onclick="toggleUser('${u.phone}',true)">Enable</button>`;
+      h += `<tr>
+        <td style="font-family:monospace;font-weight:600;color:var(--text)">+${u.phone}</td>
+        <td style="color:var(--text2)">${exp}</td>
+        <td style="font-weight:600;color:${dl < 4 && !isExp ? 'var(--red)' : 'var(--text3)'}">${isExp ? '&mdash;' : dl + 'd'}</td>
+        <td>${badge}</td>
+        <td><div style="display:flex;gap:7px;flex-wrap:wrap">
+          ${toggle}
+          <button class="btn btn-sm btn-danger" onclick="removeUser('${u.phone}')">Remove</button>
+        </div></td>
+      </tr>`;
+    }
+    h += '</tbody></table>';
+    body.innerHTML = h;
+  } catch {
+    body.innerHTML = '<div class="table-empty"><p>Failed to load users.</p></div>';
+  }
+}
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+async function doLogout() {
+  await fetch('/panel/logout', { method: 'POST' });
+  window.location.href = '/panel';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadStatus();
+loadUsers();
+setInterval(loadStatus, 6000);
+</script>
+</body>
+</html>
